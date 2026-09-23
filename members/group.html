@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小组介绍 - 沙盘战争</title>
+  <script type="module" crossorigin src="/assets/auth-DxP992OD.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/style-CFOaXfMa.css">
+  <link rel="stylesheet" crossorigin href="/assets/pages-Dbv7Ak65.css">
+</head>
+<body>
+
+    <!-- ==================== 导航栏 ==================== -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="main.html" class="navbar-logo">
+                <span class="logo-icon">&#9876;</span>
+                沙盘战争
+            </a>
+            <button class="navbar-toggle" onclick="document.querySelector('.navbar-menu').classList.toggle('open')">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <ul class="navbar-menu">
+                <li><a href="main.html">首页</a></li>
+                <li><a href="about.html">游戏背景</a></li>
+                <li><a href="group.html" class="active">小组介绍</a></li>
+                <li><a href="progress.html">开发进度</a></li>
+                <li><a href="../index.html" class="nav-home">返回主界面</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ==================== 小组介绍横幅 ==================== -->
+    <section class="hero hero-compact">
+        <div class="hero-content">
+            <h1>&#9876; 开发团队 &#9876;</h1>
+            <p class="subtitle">六区 · 六人小组，共筑红色战争沙盘</p>
+        </div>
+    </section>
+
+    <!-- ==================== 小组简介 ==================== -->
+    <section class="section">
+        <div class="group-intro-box">
+            <h2>关于我们的团队</h2>
+            <p>
+                我们是由六名成员组成的项目小组「<strong>六区</strong>」，自主开展一款以解放战争为背景的网页端红色战争题材即时战略（RTS）游戏《沙盘战争》的开发。
+                项目以极简几何（圆点单位 + 沙盘地图）表现战役级指挥，采用 Phaser 3 + 原生 JavaScript（ES Modules）+ Vite 构建，
+                作为纯静态 Web 应用部署、无需后端。团队成员各有所长，涵盖策划、程序、美术、文档与测试，
+                通过分层架构与统一命令接口紧密协作，正在将项目从原型推进到可交付。
+            </p>
+        </div>
+    </section>
+
+    <!-- ==================== 组员列表 ==================== -->
+    <section class="section">
+        <h2 class="section-title">组员介绍</h2>
+        <p class="section-desc">点击姓名查看个人主页</p>
+        <div class="member-list">
+
+            <a href="member.html?name=qihan" class="member-card">
+                <img class="avatar-img" src="images/qihan.jpg" alt="林祺晗">
+                <div class="member-info">
+                    <h3>林祺晗</h3>
+                    <p class="role">项目负责人 / 策划设计</p>
+                    <p>负责项目的统筹与组织，主导玩法与关卡策划、剧情与 UI 文案方向，并承担对外答辩主讲。</p>
+                    <span>查看个人主页 &rarr;</span>
+                </div>
+            </a>
+
+            <a href="member.html?name=xunli" class="member-card">
+                <img class="avatar-img" src="images/xunli.jpg" alt="黄训礼">
+                <div class="member-info">
+                    <h3>黄训礼</h3>
+                    <p class="role">网站程序员 / 游戏程序员</p>
+                    <p>负责网站前端开发，以及游戏核心逻辑（模拟层规则、统一命令接口、渲染接入）的程序实现。</p>
+                    <span>查看个人主页 &rarr;</span>
+                </div>
+            </a>
+
+            <a href="member.html?name=zijian" class="member-card">
+                <img class="avatar-img" src="images/zijian.jpg" alt="李梓健">
+                <div class="member-info">
+                    <h3>李梓健</h3>
+                    <p class="role">关卡设计 / 程序员</p>
+                    <p>负责 RTS 游戏的关卡与玩法节奏设计、地图编辑器，以及前端代码逻辑的辅助分析，站在玩家视角排查体验。</p>
+                    <span>查看个人主页 &rarr;</span>
+                </div>
+            </a>
+
+            <a href="member.html?name=anyu" class="member-card">
+                <img class="avatar-img" src="images/anyu.png" alt="刘安瑜">
+                <div class="member-info">
+                    <h3>刘安瑜</h3>
+                    <p class="role">视频剪辑 / 美工</p>
+                    <p>负责 UI 美工视觉与版式排版，钻研界面视觉、配色与细节表现，并参与产品测试，在设计阶段预判可用性缺陷。</p>
+                    <span>查看个人主页 &rarr;</span>
+                </div>
+            </a>
+
+            <a href="member.html?name=yichen" class="member-card">
+                <img class="avatar-img" src="images/yichen.jpg" alt="邵逸晨">
+                <div class="member-info">
+                    <h3>邵逸晨</h3>
+                    <p class="role">视频剪辑 / 网站编辑 / 测试</p>
+                    <p>负责视频剪辑、网站编辑与后期文案修改，并承担测试工作，保障页面内容与交互质量。</p>
+                    <span>查看个人主页 &rarr;</span>
+                </div>
+            </a>
+
+            <a href="member.html?name=kaixin" class="member-card">
+                <img class="avatar-img" src="images/kaixin.jpg" alt="陈开馨">
+                <div class="member-info">
+                    <h3>陈开馨</h3>
+                    <p class="role">文档编辑 / CIO</p>
+                    <p>负责项目全流程文档编撰管理、信息化统筹，以及游戏测试相关工作，保障团队之间信息高效流转。</p>
+                    <span>查看个人主页 &rarr;</span>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- ==================== 页脚 ==================== -->
+    <footer class="footer">
+        <p>&copy; 2026 沙盘战争项目组（六区） | 浏览器端红色战争 RTS 游戏 </p>
+    </footer>
+
+    <script src="/audio.js"></script>
+    <script src="/bgm-controller.js"></script>
+</body>
+</html>

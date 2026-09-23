@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>沙盘战争 - 游戏背景</title>
+  <script type="module" crossorigin src="/assets/auth-DxP992OD.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/style-CFOaXfMa.css">
+  <link rel="stylesheet" crossorigin href="/assets/pages-Dbv7Ak65.css">
+</head>
+<body>
+
+    <!-- ==================== 导航栏 ==================== -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="main.html" class="navbar-logo">
+                <span class="logo-icon">&#9876;</span>
+                沙盘战争
+            </a>
+            <button class="navbar-toggle" onclick="document.querySelector('.navbar-menu').classList.toggle('open')">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <ul class="navbar-menu">
+                <li><a href="main.html">首页</a></li>
+                <li><a href="about.html" class="active">游戏背景</a></li>
+                <li><a href="group.html">小组介绍</a></li>
+                <li><a href="progress.html">开发进度</a></li>
+                <li><a href="../index.html" class="nav-home">返回主界面</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ==================== 游戏背景横幅 ==================== -->
+    <section class="hero hero-compact">
+        <div class="hero-content">
+            <h1>&#9876; 游戏背景 &#9876;</h1>
+            <p class="subtitle">浏览器端单机 2D 俯视实时战略 · 以解放战争经典战役为题材的红色战争 RTS</p>
+        </div>
+    </section>
+
+    <!-- ==================== 项目定位 ==================== -->
+    <section class="section">
+        <div class="about-section">
+            <h3>项目定位</h3>
+            <p>
+                《沙盘战争》（英文代号 <strong>War of Dots</strong>）是一款基于浏览器的单机、俯视 2D 实时战略（RTS）游戏，为课程项目。
+                玩法框架参考 Steam 平台上的《War of Dots》，但全部<strong>代码、地图、关卡、文案、UI 与美术资源均为原创</strong>。
+            </p>
+            <p>
+                游戏以<strong>解放战争经典战役</strong>（塔山阻击战、宿北战役、双堆集战役等）为题材，玩家指挥部队完成战役级作战任务。
+                项目采用纯静态 Web 应用部署，无需后端，可作为静态站点直接发布。
+            </p>
+        </div>
+
+        <div class="about-section">
+            <h3>玩法核心循环</h3>
+            <p>
+                核心循环为「<strong>观察 → 决策 → 下令</strong>（选择 / 移动 / 攻击）→ <strong>模拟推进</strong>（战斗、补给、占领、控制线）→ <strong>迷雾与状态反馈</strong> → <strong>胜负判定</strong>」。
+                单局为小型遭遇战规模（约 5–15 分钟），教学关卡引导玩家走完「选择 → 指挥 → 交战 → 占领 → 胜负」的完整闭环。
+            </p>
+        </div>
+
+        <!-- ==================== 玩法特色 ==================== -->
+        <div class="about-section">
+            <h3>多重要素战争模拟</h3>
+            <div class="about-feature-grid">
+                <div class="about-feature">
+                    <div class="feat-icon">指挥</div>
+                    <h4>战役级实时指挥</h4>
+                    <p>俯视 2D RTS，圆点单位 + 沙盘地图；支持单选、框选、Shift 增减、从单位拖出轨迹下令、右键移动 / 攻击，空格暂停，0.5 / 1 / 2 倍速。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">城市</div>
+                    <h4>城市与占领</h4>
+                    <p>城市是枢纽：占领半径 60px，每己方单位每秒贡献 5% 进度、上限 15%；提供 5 单位补给容量与 100px 内回血。占领全部城市（普通关卡的默认目标）即获胜，但歼灭 / 防守 / 夺取据点等关卡必须达成各自目标才算胜利；城市生产已关闭，兵力完全由关卡设计决定。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">地形</div>
+                    <h4>地形博弈</h4>
+                    <p>道路加速 25% 且行军补给消耗减半；森林减速但防御提升、并遮蔽视野；山地防御最强；高山不可通行；水域可蹚但代价高、水中攻击减半且持续掉血。隘口、桥头、山口天然成为必争之地。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">补给</div>
+                    <h4>补给与士气（溃逃）</h4>
+                    <p>单位携带补给存量，断补或被多面夹击会失序、溃逃甚至投降；崩溃后不受指挥、速度大减。战斗因此有了「击溃」而不只是「打死」。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">迷雾</div>
+                    <h4>战争迷雾</h4>
+                    <p>格级三态（当前可见 / 已探索 / 从未探索）；森林中敌军仅在 60px 内可见；离开视野后保留灰色「最后已知位置」虚影标记。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">据点</div>
+                    <h4>占领点</h4>
+                    <p>轻量战术目标，被占领后仅提供视野，不提供补给与士气，也不参与胜负——可用于前哨与观察哨，不会意外改变经济与平衡。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">编辑</div>
+                    <h4>地图编辑器</h4>
+                    <p>支持绘制地形、放置城市 / 出生点 / 占领点、可玩性校验、localStorage 保存载入、文件导入导出，并可一键试玩后安全返回。</p>
+                </div>
+                <div class="about-feature">
+                    <div class="feat-icon">数据</div>
+                    <h4>数据驱动关卡</h4>
+                    <p>一局游戏完整写在一个关卡 JSON 里，引擎不含任何关卡特例；同一引擎换一份 JSON 即得到新关卡，新增战役的成本主要是地图编辑。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 技术特色 ==================== -->
+        <div class="about-section">
+            <h3>技术特色</h3>
+            <ul class="about-list">
+                <li><strong>单向数据流</strong>：输入 → 命令 → 模拟 tick → 世界状态 → 渲染。模拟层不依赖 Phaser 或 DOM，可在 Vitest 中 headless 跑完整一局。</li>
+                <li><strong>固定时间步长</strong>：1/60 秒，每帧最多补算 5 个 tick；模拟不依赖显示器刷新率，保证同一份输入永远得到同一局结果。</li>
+                <li><strong>统一命令接口</strong>：人类输入、脚本敌军与未来 AI 共用 <code>world.issueCommands</code>，避免为不同控制来源重复编写移动与攻击逻辑。</li>
+                <li><strong>空间分区</strong>：64px 均匀网格，避免全单位两两检测的 O(n²)；500 单位下单 tick 性能预算 8ms。</li>
+                <li><strong>数值与文案集中</strong>：规则数值集中在 <code>src/config/values.js</code>（禁止硬编码），文案集中在 <code>src/i18n/</code>（中文优先），两者由镜像测试守护一致。</li>
+                <li><strong>技术栈</strong>：Phaser 3 + Vite + 原生 JavaScript ES Modules；Vitest 单元测试 + Playwright 端到端测试；Node.js ≥ 22.12。</li>
+            </ul>
+        </div>
+
+        <!-- ==================== 参考与验收 ==================== -->
+        <div class="about-section">
+            <h3>参考与验收目标</h3>
+            <p>
+                参考 Steam《War of Dots》的核心玩法框架，并在关卡数据化、自动化测试与确定性模拟上做出自己的工程化取舍。
+            </p>
+            <p>
+                当前状态为<strong>可玩、可扩展、可交付</strong>：断裂峡谷（教学进攻关）、宿北战役（歼灭关）、塔山阻击战（防守关）三关已数据化并可通关，
+                另含双堆集战役（淮海战役）等关卡脚本；地图编辑器独立成页；一次性构建产出 <strong>15 个静态页面</strong>可直接部署；
+                48 项 MVP 验收标准中 <strong>44 项已完成</strong>，剩余集中在真实 GPU、Edge 浏览器与多分辨率的人工验证。
+            </p>
+        </div>
+
+        <!-- ==================== 战役规划 ==================== -->
+        <div class="about-section">
+            <h3>战役规划</h3>
+            <p>已数据化可通关的战役包括：</p>
+            <ul class="about-list">
+                <li><strong>断裂峡谷（教学进攻关）</strong>：蓝方 6 轻 2 重对红方 2 轻 2 重，敌军 60 秒一波增援，占领北方信标获胜。</li>
+                <li><strong>宿北战役（歼灭关）</strong>：胜负只看被标记的 5 个红军编队，AI 分三波增援并反冲击。</li>
+                <li><strong>塔山阻击战（防守关）</strong>：守住 8 个占领点到 300 秒，敌军分波次进攻、还会从侧翼登陆。</li>
+            </ul>
+            <p>
+                开发中另含<strong>双堆集战役（淮海战役）</strong>等关卡脚本（蓝方玩家拥有华野援军剧本，红军按五阶段脚本依次行动）。
+                所有关卡共用同一套模拟核心与命令接口，差异完全由地图 JSON 与关卡参数表达。
+            </p>
+        </div>
+    </section>
+
+    <!-- ==================== 页脚 ==================== -->
+    <footer class="footer">
+        <p>&copy; 2026 沙盘战争项目组（六区） | 浏览器端红色战争 RTS 游戏 </p>
+    </footer>
+
+    <script src="/audio.js"></script>
+    <script src="/bgm-controller.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地图编辑器 · 沙盘战争</title>
+  <script type="module" crossorigin src="/assets/editor-4EBaNnEA.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/config-Dg5kmt0j.js">
+  <link rel="modulepreload" crossorigin href="/assets/map-CUEI_L2J.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-DxP992OD.js">
+  <link rel="modulepreload" crossorigin href="/assets/i18n-C_DWQF2C.js">
+  <link rel="stylesheet" crossorigin href="/assets/editor-DJGj_XCK.css">
+</head>
+<body class="editor-mode">
+  <main class="app-shell">
+    <div id="editorToolbar" class="editor-toolbar" hidden>
+      <div class="editor-group">
+        <button data-action="new" data-i18n="editor.new">新建</button>
+        <button data-action="save" data-i18n="editor.save">保存</button>
+        <button data-action="load" data-i18n="editor.load">载入</button>
+        <button data-action="export" data-i18n="editor.export">导出</button>
+        <button data-action="import" data-i18n="editor.import">导入</button>
+        <button data-action="play" data-i18n="editor.play">试玩</button>
+        <a href="/index.html" class="editor-exit" data-i18n="editor.exit">主菜单</a>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+      <div class="editor-group">
+        <button data-tool="paint-plain" data-i18n="editor.tool.plain">平原</button>
+        <button data-tool="paint-forest" data-i18n="editor.tool.forest">森林</button>
+        <button data-tool="paint-water" data-i18n="editor.tool.water">水域</button>
+        <button data-tool="paint-bridge" data-i18n="editor.tool.bridge">桥梁</button>
+        <button data-tool="paint-mountain" data-i18n="editor.tool.mountain">山地</button>
+        <button data-tool="paint-high-mountain" data-i18n="editor.tool.highMountain">高山</button>
+        <button data-tool="paint-road" data-i18n="editor.tool.road">道路</button>
+        <button data-tool="paint-town" data-i18n="editor.tool.town">城镇</button>
+        <button data-tool="erase" data-i18n="editor.tool.erase">擦除</button>
+      </div>
+      <div class="editor-group">
+        <button data-tool="city-blue" data-i18n="editor.tool.cityBlue">蓝城</button>
+        <button data-tool="city-red" data-i18n="editor.tool.cityRed">红城</button>
+        <button data-tool="spawn-blue" data-i18n="editor.tool.spawnBlue">蓝出生点</button>
+        <button data-tool="spawn-red" data-i18n="editor.tool.spawnRed">红出生点</button>
+        <button data-tool="point-neutral" data-i18n="editor.tool.pointNeutral">中立占领点</button>
+        <button data-tool="point-blue" data-i18n="editor.tool.pointBlue">蓝占领点</button>
+        <button data-tool="point-red" data-i18n="editor.tool.pointRed">红占领点</button>
+        <button data-tool="delete" data-i18n="editor.tool.delete">删除对象</button>
+      </div>
+      <div class="editor-status" id="editorStatus"></div>
+      <div id="newMapDialog" class="editor-dialog" hidden>
+        <input id="mapName" placeholder="地图名称">
+        <select id="mapSize">
+          <option value="1280x800">1280 × 800（与游戏画布一致）</option>
+          <option value="1920x1080">1920 × 1080（大于画布）</option>
+        </select>
+        <button data-action="confirmNew" data-i18n="editor.dialog.confirm">创建</button>
+        <button data-action="cancelNew" data-i18n="editor.dialog.cancel">取消</button>
+      </div>
+    </div>
+    <div class="game-layout">
+      <section class="battlefield-wrap">
+        <div class="canvas-frame">
+          <div id="battlefield"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="/audio.js"></script>
+  <script src="/bgm-controller.js"></script>
+</body>
+</html>

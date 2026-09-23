@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 - 剧情</title>
+  <style>
+.story-content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 80px;
+  position: relative;
+}
+.story-content::before,
+.story-content::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50px;
+  background-repeat: repeat-y;
+  background-size: contain;
+  pointer-events: none;
+}
+.story-content::before {
+  left: 0;
+  background-image: url("/members/images/left_wave.png");
+}
+.story-content::after {
+  right: 0;
+  background-image: url("/members/images/right_wave.png");
+}
+
+.story-section,
+.timeline-box,
+.game-intro {
+  background: rgba(241, 233, 210, 0.93);
+  border: 2px solid #443322;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(40,30,20,0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(2px);
+}
+
+.story-section h2,
+.timeline-box h3,
+.game-intro h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #882222;
+  color: #302418;
+}
+.timeline-box h3,
+.game-intro h3 {
+  font-size:18px;
+}
+
+.story-section p,
+.game-intro p {
+  font-size: 15px;
+  line-height: 1.9;
+  color: #302418;
+  margin: 0 0 12px;
+  text-align: justify;
+}
+
+.timeline-item {
+  display:flex;
+  gap:16px;
+  padding:10px 0;
+  border-bottom: 1px solid #ddcdb8;
+}
+.timeline-item:last-child {
+  border-bottom:none;
+}
+.timeline-date {
+  font-family: 'IBM Plex Mono', monospace;
+  color:#882222;
+  font-weight:bold;
+  white-space:nowrap;
+  min-width:110px;
+}
+.timeline-desc {
+  color:#302418;
+}
+
+.back-link:link,
+.back-link:visited {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(241, 233, 210, 0.93) !important;
+  color: #302418 !important;
+  border:2px solid #443322 !important;
+  border-radius:8px !important;
+  padding:8px 14px !important;
+  font-size: 13px !important;
+  text-decoration: none !important;
+  margin-bottom: 20px !important;
+  transition: 0.15s !important;
+}
+.back-link:hover {
+  background:#f1e9d2 !important;
+  color: #882222 !important;
+  border-color:#882222 !important;
+}
+.back-link:active {
+  background:#ddcdb8 !important;
+}
+</style>
+
+
+  <script type="module" crossorigin src="/assets/auth-DxP992OD.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/introduce-BBKky2PI.css">
+</head>
+<body>
+  <main class="home-shell">
+    <header class="topbar home-topbar">
+      <div class="brand"><span class="brand-mark">+</span><div><strong data-i18n="hud.brand.title">沙盘战争</strong><small data-i18n="hud.brand.subtitle">FRONTLINE COMMAND</small></div></div>
+    </header>
+    <section class="home-hero" style="align-items: stretch; padding-top: 24px;">
+      <div class="story-content">
+        <a class="back-link" href="/">← 返回首页</a>
+
+        <div class="story-section">
+          <h2>历史背景</h2>
+          <p>抗日战争胜利后，中国迎来和平建国的历史契机，国共两党通过重庆谈判达成《双十协定》，共同商定和平建国基本方针。然而 1946 年 6 月，国民党当局单方面撕毁和平协定，调集重兵向中原解放区发起大规模进攻，全面内战正式爆发。</p>
+          <p>此后三年间，中国人民解放军在中国共产党的领导下，依托人民群众的支持，先后经历战略防御、战略反攻、战略决战三大历史阶段，通过中原突围、孟良崮战役、三大战役、渡江战役等一系列标志性军事行动，逐步歼灭国民党军队核心有生力量，最终推翻国民党反动统治，解放全国绝大部分领土，建立了人民民主专政的新中国，谱写了中国革命史的光辉篇章。</p>
+        </div>
+
+        <div class="timeline-box">
+          <h3>// 主要战役时间线</h3>
+          <div class="timeline-item">
+            <span class="timeline-date">1946.06</span>
+            <span class="timeline-desc">全面内战爆发 — 国民党进攻中原解放区</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">1947.06</span>
+            <span class="timeline-desc">战略反攻开始 — 刘邓大军千里跃进大别山</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">1948.09</span>
+            <span class="timeline-desc">战略决战 — 辽沈战役</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">1948.11</span>
+            <span class="timeline-desc">淮海战役</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">1948.11</span>
+            <span class="timeline-desc">平津战役</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-date">1949.04</span>
+            <span class="timeline-desc">渡江战役 — 解放南京</span>
+          </div>
+        </div>
+
+        <div class="game-intro">
+          <h3>// 游戏介绍</h3>
+          <p>本游戏以解放战争的完整历史进程为叙事主线，玩家将扮演一名解放军高级军事指挥员，统领纵队至集团军规模的作战单位，执行战役级别的军事指挥任务。游戏内所有战局均以历史真实战役为原型进行还原，玩家将置身于各个关键历史战场，在遵循历史基本走向的框架下，拥有充分的战术决策空间。通过兵力部署、路线规划、战术选择与战场临机调整，玩家可以凭借自身的指挥才能推动战局发展，甚至在部分战役中探索不同于历史的作战路径，在沉浸式指挥体验中感受解放战争的战略深度。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/audio.js"></script>
+  <script src="/bgm-controller.js"></script>
+  <script>
+    window.bindSfx && window.bindSfx('.back-link', 'click');
+  </script>
+</body>
+</html>

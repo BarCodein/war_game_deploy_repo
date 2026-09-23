@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="person_page"></title>
+  <script type="module" crossorigin src="/assets/auth-DxP992OD.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/style-CFOaXfMa.css">
+  <link rel="stylesheet" crossorigin href="/assets/pages-Dbv7Ak65.css">
+</head>
+<body>
+
+    <!-- ==================== 导航栏 ==================== -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="main.html" class="navbar-logo">
+                <span class="logo-icon">&#9876;</span>
+                沙盘战争
+            </a>
+            <button class="navbar-toggle" onclick="document.querySelector('.navbar-menu').classList.toggle('open')">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <ul class="navbar-menu">
+                <li><a href="main.html">首页</a></li>
+                <li><a href="about.html">游戏背景</a></li>
+                <li><a href="group.html" class="active">小组介绍</a></li>
+                <li><a href="progress.html">开发进度</a></li>
+                <li><a href="../index.html" class="nav-home">返回主界面</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ==================== 个人主页头部 ==================== -->
+    <section class="profile-hero">
+        <img id="image" src="" alt="">
+        <h1 id="personname"></h1>
+        <p  class="profile-role" id="profile_role"></p>
+    </section>
+
+    <!-- ==================== 个人介绍 ==================== -->
+    <div class="profile-content">
+
+        <h2>个人简介</h2>
+        <p id="intro"></p>
+        <p id="interest">        </p>
+        <p id="ability"></p>
+
+        <h2>技能特长</h2>
+        <ul class="skill-list" id="skill_list">
+        </ul>
+
+        <p class="cta-center">
+            <a href="group.html" class="hero-btn hero-btn-sm">&larr; 返回团队介绍</a>
+        </p>
+    </div>
+
+    <!-- ==================== 页脚 ==================== -->
+    <footer class="footer">
+        <p>&copy; 2026 沙盘战争项目组 | 红色战争RTS游戏</p>
+    </footer>
+    <script src="/audio.js"></script>
+    <script src="/bgm-controller.js"></script>
+    <script src="pagedata.js" defer></script>
+    <script src="srcipt_member.js" defer></script>
+</body>
+</html>

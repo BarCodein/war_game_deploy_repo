@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 - 成就</title>
+  <style>
+    /* 成就卡片：沿用 introduce 的羊皮纸 + 暗红侧条风格，美术细节留给设计同学 */
+    .ach-summary {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .ach-summary-text {
+      font-size: 14px;
+      color: #302418;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .ach-progress-track {
+      flex: 1 1 220px;
+      min-width: 160px;
+      height: 10px;
+      background: #d9cbb2;
+      border: 1px solid #b39b78;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .ach-progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #b8862a, #d64040);
+      transition: width .4s ease;
+    }
+
+    .ach-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .ach-card {
+      background: #e8ddc9;
+      border-left: 4px solid #882222;
+      border-radius: 6px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ach-card.locked {
+      border-left-color: #8b8377;
+      background: #ded4c1;
+      opacity: .72;
+    }
+    .ach-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .ach-stars { font-size: 16px; letter-spacing: 3px; }
+    .ach-star.on { color: #c8891b; text-shadow: 0 1px 0 rgba(255, 255, 255, .5); }
+    .ach-star.dim { color: #a29682; }
+    .ach-star.off { color: #cfc4b0; }
+    .ach-badge {
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid #b39b78;
+      color: #6b5a45;
+    }
+    .ach-badge.unlocked { border-color: #2f6b45; color: #24573a; background: rgba(47, 107, 69, .12); }
+    .ach-category {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin: 6px 0 0;
+      font-weight: bold;
+    }
+    .ach-cat-main { background: rgba(120, 60, 30, .15); color: #7a3c1e; border: 1px solid #b3845c; }
+    .ach-cat-climb { background: rgba(30, 80, 120, .15); color: #1e5078; border: 1px solid #5c8ab3; }
+    .ach-card h3 { font-size: 15px; margin: 2px 0 0; color: #302418; }
+    .ach-desc { font-size: 13px; color: #5c4b3a; margin: 0; line-height: 1.6; }
+    .ach-note { font-size: 12px; color: #7d6a54; margin: 0; line-height: 1.6; }
+    .ach-card.locked .ach-note { color: #7a5a3a; }
+
+    @media (max-width: 720px) {
+      .ach-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 返回按钮样式（和"进入战役"一致） */
+    .battle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 40px;
+      font-family: "SimHei", sans-serif;
+      font-size: 1rem;
+      letter-spacing: 3px;
+      color: #f1e9d2;
+      background: linear-gradient(180deg, #8b2222 0%, #6b1818 100%);
+      border: 2px solid #c8a84e;
+      border-radius: 3px;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(40, 25, 12, 0.35);
+      transition: all .2s ease;
+    }
+    .battle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.4),
+        0 8px 20px rgba(40, 25, 12, 0.5);
+      color: #fff;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/achievements-B3KkGtui.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/auth-DxP992OD.js">
+  <link rel="modulepreload" crossorigin href="/assets/config-Dg5kmt0j.js">
+  <link rel="modulepreload" crossorigin href="/assets/level-BnrBJt58.js">
+  <link rel="stylesheet" crossorigin href="/assets/introduce-BBKky2PI.css">
+</head>
+<body>
+  <main class="home-shell">
+    <header class="topbar home-topbar">
+      <div class="brand"><span class="brand-mark">+</span><div><strong>沙盘战争</strong><small>FRONTLINE COMMAND</small></div></div>
+    </header>
+    <section class="home-hero" style="align-items: stretch; padding-top: 24px;">
+      <div class="intro-content">
+        <a class="battle-btn" id="achBackLink" href="/" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; margin-bottom: 20px;">← 返回首页</a>
+
+        <div class="intro-section">
+          <h2>成就</h2>
+          <p>每一条成就都是沙盘上的一次印记。成就有 1~3 星之分，解锁后会点亮对应的星数，右上角记录总进度。</p>
+          <div class="ach-summary">
+            <span class="ach-summary-text" id="achSummary">加载中…</span>
+            <div class="ach-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="ach-progress-bar" id="achProgress"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-section">
+          <h2>成就列表</h2>
+          <div class="ach-grid" id="achGrid"></div>
+        </div>
+
+        <div class="tip-box">
+          <h3>// 说明</h3>
+          <p>· 清除浏览器数据会一并清空成就进度。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="/audio.js"></script>
+  <script src="/bgm-controller.js"></script>
+  <script>
+    // UI 音效：返回首页
+    window.bindSfx && window.bindSfx('#achBackLink', 'click');
+  </script>
+</body>
+</html>
