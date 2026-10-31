@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 · PvP 联机</title>
+  <!--
+    ================================================================
+    PvP 入口页（P3：账号 + 房间码 + 链路自检；P4 会把"对局中"接到 pvp-battle.html）
+      1. 账号：/api/auth/register · login · logout · me（HttpOnly Cookie 会话）
+      2. 房间：POST /api/rooms（建房）· /join（加入）· /ready · /leave，
+                状态通过 socket 的 match:state / match:begin 推送
+      3. 链路：GET /api/health（REST）+ /socket.io 握手与 link:ping（WebSocket）
+    全部走**同源相对路径**：本地（Vite 代理）与线上（Nginx 反代）跑同一份代码。
+    ================================================================
+  -->
+  <style>
+    /* PvP 大厅：视觉语言对齐战役主菜单（members/css/index.css）
+       —— 深棕顶栏 + 全屏沙盘底图 + 米白"纸张"面板（4px 深色描边、黄铜内阴影、大圆角）。 */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { min-height: 100%; }
+    body {
+      min-height: 100vh;
+      color: #462412;
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      background-color: #1b120b;
+      background-image: linear-gradient(rgba(20, 10, 4, .55), rgba(20, 10, 4, .78)), url("/assets/index-BD0i1KiY.png");
+      background-size: cover;
+      background-position: center top;
+      background-attachment: fixed;
+      padding-bottom: 40px;
+    }
+
+    /* ---------- 顶栏（与战役 .topbar 同款） ---------- */
+    .topbar {
+      height: 60px; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      background-color: rgb(70, 34, 8);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; color: #faf7f7; }
+    .brand-mark { font-size: 24px; color: #e9c477; }
+    .brand strong { font-size: 17px; letter-spacing: 3px; }
+    .brand small { display: block; font-size: 10px; letter-spacing: 2px; opacity: .72; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+      font-size: 12px; color: #f3e6d2; background: rgba(255, 255, 255, .10);
+      border: 1px solid rgba(255, 240, 214, .26);
+    }
+    .pill b { font-weight: 600; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #d4a843; box-shadow: 0 0 8px currentColor; }
+    .dot.ok { background: #56a34a; } .dot.bad { background: #d0453a; } .dot.wait { background: #d4a843; }
+    .icon-button {
+      padding: 8px 14px; border: none; border-radius: 4px; cursor: pointer;
+      background: rgba(255, 216, 216, .18); color: #fffcfc; font-size: 13px; letter-spacing: 1px;
+      text-decoration: none;
+    }
+    .icon-button:hover { background: rgba(126, 44, 44, .45); }
+
+    /* ---------- 大标题（战役 .page-title 的手感） ---------- */
+    /* 标题压一层横向暗色渐隐，避免和底图自带的美术字打架 */
+    .hero-title {
+      max-width: 1240px; margin: 26px auto 6px; padding: 10px 24px 12px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, rgba(18, 9, 4, .72) 0%, rgba(18, 9, 4, .38) 55%, rgba(18, 9, 4, 0) 100%);
+    }
+    .hero-title h1 {
+      font-family: "SimHei", "Microsoft YaHei", sans-serif;
+      font-size: 56px; line-height: 1; color: #991919; letter-spacing: 6px;
+      text-shadow: 0 2px 0 rgba(241, 233, 210, .55), 0 10px 24px rgba(0, 0, 0, .45);
+    }
+    .hero-title p { margin-top: 10px; font-size: 17px; color: #f0dfc4; letter-spacing: 2px; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+
+    /* ---------- 面板网格 ---------- */
+    .board {
+      max-width: 1240px; margin: 18px auto 0; padding: 0 8px;
+      display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; gap: 18px; align-items: start;
+    }
+    .board-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 18px; }
+
+    /* ---------- 纸张面板（战役 .home-card 同款质感） ---------- */
+    .paper {
+      background-color: #f1e9d2;
+      border: 4px solid #2b2b2b;
+      border-radius: 18px;
+      box-shadow:
+        inset 0 0 0 2px rgba(120, 90, 50, .35),
+        inset 0 0 18px rgba(160, 120, 60, .22),
+        0 6px 18px rgba(0, 0, 0, .38);
+      padding: 18px 20px 20px;
+    }
+    .paper h2 {
+      font-size: 19px; letter-spacing: 3px; color: #7a2412; font-weight: 700;
+      padding-bottom: 8px; margin-bottom: 14px;
+      border-bottom: 2px dashed rgba(70, 36, 18, .25);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .paper h2::before { content: '▍'; color: #991919; font-size: 16px; }
+
+    /* ---------- 表单元素 ---------- */
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .row:first-child { margin-top: 0; }
+    button, .btn {
+      cursor: pointer; padding: 9px 16px; border-radius: 10px; font-size: 13.5px; letter-spacing: 1px;
+      color: #f7f0e0; background: linear-gradient(180deg, #8a3a1c, #6d2213);
+      border: 2px solid #2b2b2b; box-shadow: inset 0 0 0 1px rgba(255, 226, 178, .25);
+      transition: transform .12s ease, filter .12s ease;
+      font-family: inherit;
+    }
+    button:hover, .btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    button:active, .btn:active { transform: translateY(0) scale(.99); }
+    button:disabled { opacity: .55; cursor: progress; transform: none; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 2px solid #991919; outline-offset: 2px;
+    }
+    .btn-ghost {
+      background: #efe4c8; color: #462412; border: 2px solid #2b2b2b;
+      box-shadow: inset 0 0 0 1px rgba(120, 90, 50, .30);
+    }
+    input, select {
+      padding: 9px 12px; border-radius: 10px; font-size: 14px; min-width: 180px;
+      border: 2px solid #2b2b2b; background: #fff8e6; color: #462412; font-family: inherit;
+    }
+    input::placeholder { color: #9c8a72; }
+    #inputRoomCode {
+      text-transform: uppercase; letter-spacing: 6px; font-family: Consolas, monospace;
+      width: 180px; min-width: 0;
+    }
+
+    /* ---------- 身份选择 ---------- */
+    #rolePicker {
+      gap: 8px; padding: 10px 12px; margin-top: 14px;
+      border: 2px dashed rgba(70, 36, 18, .35); border-radius: 12px; background: rgba(255, 248, 230, .55);
+    }
+    #rolePicker > .label { font-size: 12.5px; color: #6b5442; letter-spacing: 1px; }
+    .role-btn {
+      background: #efe4c8; color: #462412; border: 2px solid #2b2b2b; padding: 7px 13px; font-size: 12.5px;
+      box-shadow: inset 0 0 0 1px rgba(120, 90, 50, .28);
+    }
+    .role-btn em { font-style: normal; opacity: .7; margin-left: 3px; }
+    .role-btn.active { background: linear-gradient(180deg, #991919, #7a2412); color: #f9efd9; }
+    .role-btn[disabled] { opacity: .5; cursor: default; }
+
+    /* ---------- 房间 ---------- */
+    .room-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .room-head > span { font-size: 12.5px; color: #6b5442; letter-spacing: 2px; }
+    .code-big {
+      font-family: Consolas, monospace; font-size: 30px; letter-spacing: 9px; color: #7a2412; font-weight: 700;
+    }
+    table.players { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 14px; }
+    table.players th, table.players td {
+      text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(70, 36, 18, .18);
+    }
+    table.players th { font-size: 11px; letter-spacing: 2px; color: #7a2412; text-transform: uppercase; }
+    table.players tbody tr:nth-child(odd) { background: rgba(120, 90, 50, .07); }
+    .faction-blue { color: #1f5f6b; font-weight: 600; } .faction-red { color: #8f2018; font-weight: 600; }
+    .ready-yes { color: #2f7d3a; } .ready-no { color: #6b5442; }
+    #roomCountdown { margin-top: 10px; font-size: 15px; letter-spacing: 2px; color: #7a2412; min-height: 20px; }
+    #roomStarted { margin-top: 6px; }
+    .started-list { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; font-size: 13.5px; margin-top: 6px; }
+    .started-list dt { color: #6b5442; } .started-list dd { font-family: Consolas, monospace; }
+
+    /* ---------- 文案 ---------- */
+    .who { font-size: 16px; margin: 0 0 4px; }
+    .who b { color: #7a2412; font-size: 18px; }
+    .account-line { font-size: 12px; color: #6b5442; margin: 0; line-height: 1.7; word-break: break-all; }
+    .note { margin-top: 10px; font-size: 12.5px; line-height: 1.85; color: #6b5442; }
+    .hint { margin: 0; font-size: 12.5px; line-height: 1.95; color: #5d4a38; }
+    .hint2 { margin: 8px 0 0; font-size: 12px; line-height: 1.8; color: #6b5442; }
+    .ok-text { color: #2f7d3a; } .bad-text { color: #a3231d; }
+    #roomMsg, #authMsg { margin-top: 12px; font-size: 13px; min-height: 18px; }
+    code { font-family: Consolas, monospace; background: rgba(70, 36, 18, .10); padding: 1px 5px; border-radius: 4px; color: #462412; }
+
+    /* ---------- 服务器面板 ---------- */
+    dl { display: grid; grid-template-columns: 104px 1fr; gap: 7px 12px; margin: 0; font-size: 12.5px; }
+    dt { color: #6b5442; } dd { margin: 0; font-family: Consolas, "Courier New", monospace; word-break: break-all; color: #3d2a1c; }
+    pre {
+      margin: 12px 0 0; padding: 11px 12px; max-height: 150px; overflow: auto;
+      font-size: 11.5px; line-height: 1.55; color: #e6d8bd; background: #241a12;
+      border-radius: 10px; border: 2px solid #2b2b2b;
+    }
+    .help-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.95; color: #4a3826; }
+    .help-list b { color: #7a2412; }
+
+    /* ---------- 响应式 ---------- */
+    @media (max-width: 1100px) {
+      .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .board > .paper:first-child { grid-column: 1 / -1; }
+      .hero-title h1 { font-size: 44px; }
+    }
+    @media (max-width: 760px) {
+      .board, .board-bottom { grid-template-columns: minmax(0, 1fr); }
+      .topbar { height: auto; padding: 10px 14px; flex-wrap: wrap; }
+      .hero-title h1 { font-size: 34px; letter-spacing: 3px; }
+    }
+  </style>
+</head>
+<body class="pvp-page">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">+</span>
+      <div><strong>沙盘战争</strong><small>FRONTLINE COMMAND</small></div>
+    </div>
+    <div class="topbar-right">
+      <span class="pill"><i class="dot wait" id="dotRest"></i>REST <b id="restState">检测中…</b></span>
+      <span class="pill"><i class="dot wait" id="dotWs"></i>WebSocket <b id="wsState">检测中…</b></span>
+      <a class="icon-button" href="/index.html" title="回到战役主菜单">← 返回战役</a>
+    </div>
+  </header>
+
+  <section class="hero-title">
+    <h1>联机对战</h1>
+    <p>账号 · 房间码匹配 · 蓝方 / 红方 / 观战</p>
+  </section>
+
+  <div class="board">
+    <!-- ============ 账号 ============ -->
+    <section class="paper" id="authCard">
+      <h2>账号</h2>
+      <div id="authLoggedIn" hidden>
+        <p class="who">已登录：<b id="meName">—</b></p>
+        <p class="account-line" id="meAccount"></p>
+        <div class="row">
+          <button id="btnLogout" class="btn-ghost">登出</button>
+        </div>
+        <p class="note">账号与战役共用（统一在登录页登录）；「登出」会同时删除服务端会话与本地缓存。</p>
+      </div>
+      <div id="authMsg" hidden></div>
+    </section>
+
+    <!-- ============ 对战房间（主面板） ============ -->
+    <section class="paper" id="roomCard">
+      <h2>对战房间</h2>
+
+      <div id="roomGuestHint" hidden>
+        <p class="note">登录后即可创建房间或输入房间码加入（好友约战 · 支持同阵营多人 + 观战）。</p>
+      </div>
+
+      <div id="roomLobby" hidden>
+        <div class="row">
+          <select id="levelSelect">
+            <option value="dujiang_pvp">渡江战役（8v8 城市 · 40v40）</option>
+            <option value="pingjin_pvp">平津战役（4v4 城市）</option>
+          </select>
+          <button id="btnCreateRoom">创建房间</button>
+        </div>
+        <div class="row">
+          <input id="inputRoomCode" type="text" placeholder="房间码" maxlength="6" autocomplete="off">
+          <button id="btnJoinRoom" class="btn-ghost">加入房间</button>
+        </div>
+        <p class="note">把 6 位房间码发给对手，对方输入即可加入。双方都点「准备」后 3 秒倒计时开局；房间 30 分钟未开局自动失效。</p>
+      </div>
+
+      <div id="roomActive" hidden>
+        <div class="room-head">
+          <span>房间码</span>
+          <b id="roomCode" class="code-big">—</b>
+          <button id="btnCopyCode" class="btn-ghost">复制</button>
+        </div>
+        <p id="roomStateText" class="note">—</p>
+
+        <table class="players" id="roomPlayers">
+          <thead><tr><th>玩家</th><th>身份</th><th>状态</th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="row" id="rolePicker">
+          <span class="label">身份</span>
+          <button class="role-btn" data-role="blue" id="btnRoleBlue">蓝方 <em>(0/4)</em></button>
+          <button class="role-btn" data-role="red" id="btnRoleRed">红方 <em>(0/4)</em></button>
+          <button class="role-btn" data-role="spectator" id="btnRoleSpec">观战 <em>(0/8)</em></button>
+        </div>
+
+        <div class="row">
+          <button id="btnReady">准备</button>
+          <button id="btnLeaveRoom" class="btn-ghost">离开房间</button>
+        </div>
+
+        <div id="roomCountdown"></div>
+
+        <div id="roomStarted" hidden>
+          <dl class="started-list">
+            <dt>关卡</dt><dd id="startedLevel">—</dd>
+            <dt>对局 ID</dt><dd id="startedMatchId">—</dd>
+            <dt>你的身份</dt><dd id="startedFaction">—</dd>
+            <dt>准备阶段</dt><dd id="startedPrep">—</dd>
+          </dl>
+          <p class="note" id="startedHint">双方已进入对局，正在加载战场…</p>
+        </div>
+      </div>
+
+      <div id="roomMsg"></div>
+    </section>
+
+    <!-- ============ 服务器 ============ -->
+    <section class="paper" id="serverCard">
+      <h2>服务器</h2>
+      <dl>
+        <dt>服务版本</dt><dd id="fVersion">—</dd>
+        <dt>Node 版本</dt><dd id="fNode">—</dd>
+        <dt>运行时长</dt><dd id="fUptime">—</dd>
+        <dt>房间占用</dt><dd id="fRooms">—</dd>
+        <dt>快照频率</dt><dd id="fSnapshot">—</dd>
+        <dt>注册账号数</dt><dd id="fAccounts">—</dd>
+        <dt>当前 WS 客户端</dt><dd id="fClients">—</dd>
+        <dt>往返延迟 RTT</dt><dd id="fRtt">—</dd>
+        <dt>页面来源</dt><dd id="fOrigin">—</dd>
+        <dt>解析出的 WS 地址</dt><dd id="fWsUrl">—</dd>
+      </dl>
+      <div class="row">
+        <button id="btnRecheck" class="btn-ghost">重新检测</button>
+        <button id="btnSocket" class="btn-ghost">断开 / 重连 WS</button>
+      </div>
+      <pre id="log">等待检测…</pre>
+    </section>
+  </div>
+
+  <div class="board board-bottom">
+    <section class="paper" id="helpCard">
+      <h2>玩法速览</h2>
+      <ul class="help-list">
+        <li><b>身份</b>：进房后可选 <b>蓝方</b> / <b>红方</b> / <b>观战</b>（每方 4 人、观战 8 人），开打后锁定。</li>
+        <li><b>开打</b>：双方各 ≥1 名参战玩家，且所有参战玩家点了「准备」。</li>
+        <li><b>观战</b>：全局视野，可点任意单位看补给线，但不能下令；只能在等待阶段进房。</li>
+        <li><b>投降</b>：每人各自投降，<b>同阵营全部投降</b>才判负；投降后立即失去指挥权。</li>
+        <li><b>再来一局</b>：结算后回大厅仍会自动回到原房间，房间码不变。</li>
+      </ul>
+    </section>
+
+    <section class="paper" id="devCard">
+      <h2>本地 / 线上运行</h2>
+      <p class="hint">
+        <b>本地怎么跑：</b>开两个终端 —— <code>npm run server</code>（Node，127.0.0.1:3001）与 <code>npm run dev</code>（Vite），
+        然后打开 <code>http://localhost:5173/pvp.html</code>；再开一个无痕窗口注册另一个账号即可自己和自己对战。<br>
+        <b>一个进程验证（不用 Nginx）：</b><code>npm run build</code> 后 <code>PVP_SERVE_STATIC=1 npm run server</code>
+        （Windows：<code>$env:PVP_SERVE_STATIC=1; npm run server</code>），打开 <code>http://127.0.0.1:3001/pvp.html</code>。<br>
+        <b>线上：</b>Nginx 反代 <code>/api</code> 与 <code>/socket.io</code> 到 127.0.0.1:3001 后，打开 <code>http://&lt;服务器IP&gt;/pvp.html</code>。
+      </p>
+    </section>
+  </div>
+<script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var logEl = $('log');
+      var lines = [];
+      function log(message) {
+        var stamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        lines.unshift('[' + stamp + '] ' + message);
+        lines = lines.slice(0, 12);
+        logEl.textContent = lines.join('\n');
+      }
+      function setState(kind, ok, text) {
+        $('dot' + kind).className = 'dot ' + (ok === null ? 'wait' : ok ? 'ok' : 'bad');
+        var el = $(kind === 'Rest' ? 'restState' : 'wsState');
+        el.textContent = text;
+        el.className = ok === null ? '' : ok ? 'ok-text' : 'bad-text';
+      }
+      function fmtUptime(seconds) {
+        if (!Number.isFinite(seconds)) return '—';
+        var s = Math.max(0, Math.floor(seconds));
+        var m = Math.floor(s / 60);
+        return m > 0 ? m + ' 分 ' + (s % 60) + ' 秒' : s + ' 秒';
+      }
+      function fmtDate(ms) {
+        if (!ms) return '';
+        return new Date(ms).toLocaleString('zh-CN', { hour12: false });
+      }
+      function apiJson(path, options) {
+        options = options || {};
+        options.headers = Object.assign({ 'content-type': 'application/json' }, options.headers || {});
+        if (options.body && typeof options.body !== 'string') options.body = JSON.stringify(options.body);
+        return fetch(path, options).then(function (res) {
+          return res.text().then(function (text) {
+            var data = null;
+            try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+            return { res: res, data: data };
+          });
+        });
+      }
+
+      var wsUrl = location.origin.replace(/^http/, 'ws') + '/socket.io/';
+      $('fOrigin').textContent = location.origin;
+      $('fWsUrl').textContent = wsUrl;
+
+      // ================= 账号 =================
+      // 账号统一在 login.html 登录（服务端为准）。这里只做两件事：
+      //   1) 用 /api/auth/me 确认服务端会话；未登录 → 去统一登录页（带 next 回来）
+      //   2) 顶栏显示当前账号 + 登出（同时清服务端会话与本地缓存）
+      var me = null;
+      var authMsg = $('authMsg');
+      function showAuthMessage(text, isError) {
+        if (!authMsg) return;
+        authMsg.textContent = text || '';
+        authMsg.className = isError ? 'bad-text' : 'ok-text';
+      }
+      function syncLocalSession(username) {
+        try {
+          if (username) localStorage.setItem('war-of-dots.session', JSON.stringify({ username: username, loggedInAt: Date.now() }));
+          else localStorage.removeItem('war-of-dots.session');
+        } catch (error) { /* 隐私模式忽略 */ }
+      }
+      function goLogin() {
+        var next = window.location.pathname + window.location.search;
+        window.location.replace('/login.html?next=' + encodeURIComponent(next));
+      }
+      function renderUser(user) {
+        me = user || null;
+        if (!me) { goLogin(); return; }
+        syncLocalSession(me.username);
+        $('authLoggedIn').hidden = false;
+        $('meName').textContent = me.displayName || me.username;
+        $('meAccount').textContent = '（@' + me.username + ' · id ' + me.id +
+          (me.createdAt ? ' · 注册于 ' + fmtDate(me.createdAt) : '') + '）';
+        renderRoomAccess();
+      }
+      // 每次确认登录态后尝试自动回到上一局房间
+      function maybeAutoRejoin() {
+        if (!autoRejoinTried && me) tryAutoRejoinRoom();
+      }
+
+      function refreshMe() {
+        return fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' })
+          .then(function (res) { return res.json().catch(function () { return null; }); })
+          .then(function (data) {
+            renderUser(data && data.ok ? data.user : null);
+            maybeAutoRejoin();
+            return data;
+          })
+          .catch(function () {
+            // 服务器不可达：不要把用户踢去登录页（那边也登录不了），就地提示
+            showAuthMessage('联机服务不可用：请确认服务器已启动', true);
+            $('authLoggedIn').hidden = false;
+            return null;
+          });
+      }
+      $('btnLogout').addEventListener('click', function () {
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+          .catch(function () { /* 服务器不可达也照常清本地 */ })
+          .finally(function () {
+            syncLocalSession(null);
+            me = null;
+            resetRoomView();
+            window.location.replace('/login.html');
+          });
+      });
+
+      // ================= 房间 =================
+      var room = null;          // 最新的 match:state 载荷
+      var roomCode = null;      // 当前所在房间码
+      var countdownTimer = null;
+      var roomMsg = $('roomMsg');
+
+      function showRoomMessage(text, isError) {
+        roomMsg.textContent = text || '';
+        roomMsg.className = isError ? 'bad-text' : 'ok-text';
+      }
+
+      // 身份选择（§11.21）：蓝/红/观战，只在等待阶段；容量从 state.limits 读
+      function renderRolePicker(state) {
+        var limits = state.limits || {};
+        var counts = state.counts || { blue: 0, red: 0, spectator: 0 };
+        var maxPerSide = limits.maxPerSide || 4;
+        var maxSpec = limits.maxSpectators || 8;
+        $('btnRoleBlue').innerHTML = '蓝方 <em>(' + counts.blue + '/' + maxPerSide + ')</em>';
+        $('btnRoleRed').innerHTML = '红方 <em>(' + counts.red + '/' + maxPerSide + ')</em>';
+        $('btnRoleSpec').innerHTML = '观战 <em>(' + counts.spectator + '/' + maxSpec + ')</em>';
+        var mine = (state.players || []).find(function (player) { return me && player.id === me.id; });
+        var myRole = mine ? (mine.role || mine.faction) : null;
+        ['blue', 'red', 'spectator'].forEach(function (role) {
+          var button = role === 'blue' ? $('btnRoleBlue') : role === 'red' ? $('btnRoleRed') : $('btnRoleSpec');
+          button.disabled = state.state !== 'waiting';
+          button.classList.toggle('active', myRole === role);
+        });
+        // 观战者不能准备
+        var readyButton = $('btnReady');
+        if (myRole === 'spectator') {
+          readyButton.hidden = true;
+          $('roomStateText').textContent = '观战中：等待参战双方开始对局（可观战时进对局页）';
+        } else {
+          readyButton.hidden = false;
+        }
+      }
+
+      function onSetRole(role) {
+        if (!roomCode) return;
+        ['blue', 'red', 'spectator'].forEach(function (item) {
+          var button = item === 'blue' ? $('btnRoleBlue') : item === 'red' ? $('btnRoleRed') : $('btnRoleSpec');
+          button.disabled = true;
+        });
+        emitWithAck('room:setRole', { roomCode: roomCode, role: role }).then(function (result) {
+          if (!result.ok) showRoomMessage((result.message || '切换身份失败') + (result.code ? ' [' + result.code + ']' : ''), true);
+          else if (result.room) renderRoomState(result.room);
+        });
+      }
+      $('btnRoleBlue').addEventListener('click', function () { onSetRole('blue'); });
+      $('btnRoleRed').addEventListener('click', function () { onSetRole('red'); });
+      $('btnRoleSpec').addEventListener('click', function () { onSetRole('spectator'); });
+
+      function renderRoomAccess() {
+        var loggedIn = Boolean(me);
+        $('roomGuestHint').hidden = loggedIn || Boolean(roomCode);
+        $('roomLobby').hidden = !loggedIn || Boolean(roomCode);
+        $('roomActive').hidden = !roomCode;
+      }
+
+      function resetRoomView() {
+        room = null;
+        roomCode = null;
+        if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+        $('roomActive').hidden = true;
+        $('roomStarted').hidden = true;
+        $('roomCountdown').textContent = '';
+        renderRoomAccess();
+      }
+
+      function renderRoomState(state) {
+        if (!state) return;
+        if (state.closed || state.state === 'finished') {
+          var reason = state.reason || '';
+          resetRoomView();
+          showRoomMessage(reason === 'host-left' ? '房主已离开，房间已关闭' : '房间已结束' + (reason ? '（' + reason + '）' : ''), true);
+          log('ROOM 关闭 ' + (reason || ''));
+          return;
+        }
+        room = state;
+        if (!roomCode) roomCode = state.code;
+        renderRolePicker(state);
+        $('roomLobby').hidden = true;
+        $('roomGuestHint').hidden = true;
+        $('roomActive').hidden = false;
+        $('roomCode').textContent = state.code;
+
+        var tbody = $('roomPlayers').querySelector('tbody');
+        tbody.innerHTML = '';
+        (state.players || []).forEach(function (player) {
+          var tr = document.createElement('tr');
+          var nameCell = document.createElement('td');
+          nameCell.textContent = player.displayName + (me && player.id === me.id ? '（你）' : '');
+          var role = player.role || player.faction || 'spectator';
+          var factionCell = document.createElement('td');
+          factionCell.className = role === 'spectator' ? '' : 'faction-' + role;
+          factionCell.textContent = role === 'blue' ? '蓝方' : role === 'red' ? '红方' : '观战';
+          var readyCell = document.createElement('td');
+          readyCell.className = player.resigned ? 'ready-no' : (player.ready ? 'ready-yes' : 'ready-no');
+          readyCell.textContent = player.resigned
+            ? '已投降'
+            : role === 'spectator' ? '观战中' : (player.ready ? '已准备' : '未准备');
+          tr.appendChild(nameCell); tr.appendChild(factionCell); tr.appendChild(readyCell);
+          tbody.appendChild(tr);
+        });
+
+        var mine = (state.players || []).find(function (player) { return me && player.id === me.id; }) || null;
+        var opponent = (state.players || []).find(function (player) { return !me || player.id !== me.id; }) || null;
+        if (mine) $('btnReady').textContent = mine.ready ? '取消准备' : '准备';
+        $('btnReady').disabled = !mine;
+
+        if (state.state === 'waiting') {
+          $('roomStateText').textContent = opponent
+            ? '双方就位，等两位玩家都点「准备」'
+            : '等待对手加入：把房间码发给对方';
+        } else if (state.state === 'countdown') {
+          $('roomStateText').textContent = '双方已准备，即将开始…';
+        } else if (state.state === 'playing') {
+          $('roomStateText').textContent = '对局进行中';
+        }
+        renderCountdown(state);
+      }
+
+      function renderCountdown(state) {
+        if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+        $('roomCountdown').textContent = '';
+        if (state.state !== 'countdown' || !state.countdownEndsAt) return;
+
+        var reference = state.serverNow || Date.now();
+        var tickStartedAt = Date.now();
+        function tick() {
+          // remaining = 倒计时终点 - 服务器下发状态时刻 - 本地已流逝时间
+          var elapsed = Date.now() - tickStartedAt;
+          var remaining = Math.max(0, Math.ceil((state.countdownEndsAt - reference - elapsed) / 1000));
+          $('roomCountdown').textContent = remaining > 0 ? ('倒计时 ' + remaining + ' 秒…') : '开始！';
+          if (remaining <= 0) { clearInterval(countdownTimer); countdownTimer = null; }
+        }
+        tick();
+        countdownTimer = setInterval(tick, 250);
+      }
+
+      function emitWithAck(event, payload) {
+        return new Promise(function (resolve) {
+          if (!socket || !socket.connected) return resolve({ ok: false, code: 'NO_SOCKET', message: 'WebSocket 未连接' });
+          socket.timeout(5000).emit(event, payload, function (error, response) {
+            if (error) return resolve({ ok: false, code: 'TIMEOUT', message: '服务器无响应' });
+            resolve(response || { ok: false, code: 'EMPTY' });
+          });
+        });
+      }
+
+      function afterJoinRoom(roomPayload, code) {
+        roomCode = code;
+        renderRoomAccess();
+        renderRoomState(roomPayload);
+        emitWithAck('match:join', { roomCode: code }).then(function (result) {
+          if (!result.ok) {
+            showRoomMessage((result.message || '进入房间频道失败') + (result.code ? ' [' + result.code + ']' : ''), true);
+          }
+        });
+      }
+
+      // 从对局页点「返回大厅」回来时：自动回到上一局的同一个房间（房间码不变），
+      // 双方直接再点「准备」即可开下一局，不需要重新输入/转发房间码。
+      var autoRejoinTried = false;
+      function tryAutoRejoinRoom() {
+        var code = '';
+        try { code = (sessionStorage.getItem('pvp:lastRoom') || '').toUpperCase(); } catch (e) { code = ''; }
+        if (autoRejoinTried || !me || roomCode || !/^[A-Z0-9]{6}$/.test(code)) return;
+        autoRejoinTried = true;
+        try { sessionStorage.removeItem('pvp:lastRoom'); } catch (e) { /* 忽略 */ }
+        // 先把"已结束"的房间重置成等待（同一房间码再开一局），再拉房间视图
+        apiJson('/api/rooms/' + code + '/rearm', { method: 'POST' })
+          .catch(function () { /* 不是成员或房间已回收：交给后面的 GET 处理 */ })
+          .then(function () { return apiJson('/api/rooms/' + code); })
+          .then(function (result) {
+            if (!result.res.ok || !result.data || !result.data.ok) return null;
+            var payload = result.data.room;
+            // 只在"还能开一局"的房间（等待/倒计时）里自动回归；已经开打的旧房间不抢
+            if (payload.state !== 'waiting' && payload.state !== 'countdown') return null;
+            var already = (payload.players || []).some(function (player) { return me && player.id === me.id; });
+            if (already) { afterJoinRoom(payload, payload.code); return null; }
+            return apiJson('/api/rooms/' + code + '/join', { method: 'POST' })
+              .then(function (joined) {
+                if (joined.res.ok && joined.data && joined.data.ok) afterJoinRoom(joined.data.room, code);
+              });
+          })
+          .catch(function () { /* 房间没了就留在大厅 */ });
+      }
+
+      function onCreateRoom() {
+        if (!me) return;
+        $('btnCreateRoom').disabled = true;
+        showRoomMessage('创建中…', false);
+        apiJson('/api/rooms', { method: 'POST', body: { levelId: $('levelSelect').value } })
+          .then(function (result) {
+            if (result.res.ok && result.data && result.data.ok) {
+              var created = result.data.room;
+              showRoomMessage('房间已创建，把房间码发给对手', false);
+              log('ROOM 建房 ' + created.code);
+              afterJoinRoom(created, created.code);
+            } else {
+              showRoomMessage((result.data && result.data.message) || ('建房失败 HTTP ' + result.res.status), true);
+            }
+          })
+          .catch(function (error) { showRoomMessage('建房失败：' + error.message, true); })
+          .finally(function () { $('btnCreateRoom').disabled = false; });
+      }
+
+      function onJoinRoom() {
+        if (!me) return;
+        var code = ($('inputRoomCode').value || '').trim().toUpperCase();
+        if (!/^[A-Z0-9]{6}$/.test(code)) { showRoomMessage('请输入 6 位房间码', true); return; }
+        $('btnJoinRoom').disabled = true;
+        showRoomMessage('加入中…', false);
+        apiJson('/api/rooms/' + code + '/join', { method: 'POST' })
+          .then(function (result) {
+            if (result.res.ok && result.data && result.data.ok) {
+              showRoomMessage('已加入房间', false);
+              log('ROOM 加入 ' + code);
+              afterJoinRoom(result.data.room, code);
+            } else {
+              showRoomMessage((result.data && result.data.message) || ('加入失败 HTTP ' + result.res.status), true);
+            }
+          })
+          .catch(function (error) { showRoomMessage('加入失败：' + error.message, true); })
+          .finally(function () { $('btnJoinRoom').disabled = false; });
+      }
+
+      function onLeaveRoom() {
+        if (!roomCode) return;
+        var code = roomCode;
+        resetRoomView();
+        apiJson('/api/rooms/' + code + '/leave', { method: 'POST' }).catch(function () {});
+        emitWithAck('match:leave', { roomCode: code });
+        showRoomMessage('已离开房间', false);
+      }
+
+      function onToggleReady() {
+        if (!roomCode || !room) return;
+        var mine = (room.players || []).find(function (player) { return me && player.id === me.id; });
+        var nextReady = !(mine && mine.ready);
+        $('btnReady').disabled = true;
+        emitWithAck('match:ready', { roomCode: roomCode, ready: nextReady }).then(function (result) {
+          $('btnReady').disabled = false;
+          if (!result.ok) showRoomMessage((result.message || '准备失败') + (result.code ? ' [' + result.code + ']' : ''), true);
+        });
+      }
+
+      $('btnCreateRoom').addEventListener('click', onCreateRoom);
+      $('btnJoinRoom').addEventListener('click', onJoinRoom);
+      $('btnLeaveRoom').addEventListener('click', onLeaveRoom);
+      $('btnReady').addEventListener('click', onToggleReady);
+      $('btnCopyCode').addEventListener('click', function () {
+        if (!roomCode) return;
+        var text = roomCode;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { showRoomMessage('房间码已复制', false); });
+        } else {
+          showRoomMessage('房间码：' + text, false);
+        }
+      });
+
+      // ================= 链路自检 =================
+      var rttSamples = [];
+      function renderRtt() {
+        if (!rttSamples.length) { $('fRtt').textContent = '—'; return; }
+        var last = rttSamples[rttSamples.length - 1];
+        var avg = rttSamples.reduce(function (a, b) { return a + b; }, 0) / rttSamples.length;
+        var min = Math.min.apply(null, rttSamples);
+        $('fRtt').textContent = last + ' ms（最低 ' + min + ' / 平均 ' + avg.toFixed(1) + ' ms，样本 ' + rttSamples.length + '）';
+      }
+
+      function checkRest() {
+        var startedAt = performance.now();
+        return fetch('/api/health', { cache: 'no-store' })
+          .then(function (res) {
+            var rtt = Math.round(performance.now() - startedAt);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json().then(function (data) { return { data: data, rtt: rtt }; });
+          })
+          .then(function (result) {
+            var data = result.data;
+            setState('Rest', true, '正常');
+            $('fVersion').textContent = data.version || '—';
+            $('fNode').textContent = data.node || '—';
+            $('fUptime').textContent = fmtUptime(data.uptimeSeconds);
+            $('fRooms').textContent = (data.rooms ?? 0) + ' / ' + (data.maxRooms ?? '—');
+            $('fSnapshot').textContent = (data.snapshotHz ?? '—') + ' Hz';
+            $('fAccounts').textContent = (data.accounts ?? 0) + ' 个';
+            $('fClients').textContent = (data.socketClients ?? 0) + ' 个';
+            rttSamples.push(result.rtt);
+            rttSamples = rttSamples.slice(-10);
+            renderRtt();
+            return true;
+          })
+          .catch(function (error) {
+            setState('Rest', false, '失败');
+            $('fVersion').textContent = '—';
+            log('REST 失败：' + error.message + '（Node 服务起来了吗？npm run server）');
+            return false;
+          });
+      }
+
+      var socket = null;
+      function loadSocketClient() {
+        return new Promise(function (resolve, reject) {
+          if (window.io) return resolve(window.io);
+          var script = document.createElement('script');
+          script.src = '/socket.io/socket.io.js';
+          script.onload = function () { window.io ? resolve(window.io) : reject(new Error('客户端脚本已加载但没有 io')); };
+          script.onerror = function () { reject(new Error('拿不到 /socket.io/socket.io.js（Node 没起或反代未生效）')); };
+          document.head.appendChild(script);
+        });
+      }
+
+      function connectSocket() {
+        setState('Ws', null, '连接中…');
+        return loadSocketClient()
+          .then(function (io) {
+            if (socket) { socket.disconnect(); socket = null; }
+            socket = io({ transports: ['websocket', 'polling'], timeout: 5000 });
+
+            socket.on('connect', function () {
+              setState('Ws', true, '已连接');
+              log('WS 已连接 · id=' + socket.id);
+              startPing();
+              if (roomCode) emitWithAck('match:join', { roomCode: roomCode });
+            });
+            socket.on('link:hello', function (payload) {
+              log('WS hello · 服务版本 ' + payload.version + (payload.authenticated ? ' · 已认证' : ' · 未认证'));
+            });
+            socket.on('match:state', function (state) {
+              log('ROOM 状态 ' + (state && state.state) + (state && state.players ? ' · ' + state.players.length + ' 人' : ''));
+              renderRoomState(state);
+            });
+            socket.on('match:begin', function (payload) {
+              room = null;
+              $('roomLobby').hidden = true;
+              $('roomGuestHint').hidden = true;
+              $('roomActive').hidden = true;
+              $('roomStarted').hidden = false;
+              var mine = (payload.players || []).find(function (player) { return me && player.userId === me.id; }) || null;
+              $('startedLevel').textContent = payload.levelId;
+              $('startedMatchId').textContent = payload.matchId;
+              $('startedFaction').textContent = mine ? (mine.faction === 'blue' ? '蓝方' : '红方') : '—';
+              $('startedPrep').textContent = payload.prepSeconds + ' 秒';
+              log('MATCH begin ' + payload.matchId + ' · ' + payload.levelId);
+              // P4：进入对局页（画布只渲染服务器快照；房间码/关卡通过 query 传过去）
+              var code = payload.roomCode || roomCode || '';
+              var battleUrl = 'pvp-battle.html?room=' + encodeURIComponent(code) +
+                '&level=' + encodeURIComponent(payload.levelId);
+              setTimeout(function () { location.href = battleUrl; }, 400);
+            });
+            socket.on('match:end', function (payload) {
+              log('MATCH end · ' + payload.winner + ' · ' + payload.reason);
+              showRoomMessage('对局结束：' + (payload.winner === 'draw' ? '平局' : (payload.winner === 'blue' ? '蓝方胜' : '红方胜')) +
+                (payload.reason ? '（' + payload.reason + '）' : ''), false);
+            });
+            socket.on('error', function (payload) {
+              log('WS error · ' + (payload && (payload.code || payload.message)));
+            });
+            socket.on('connect_error', function (error) {
+              setState('Ws', false, '连接失败');
+              log('WS 连接失败：' + error.message);
+            });
+            socket.on('disconnect', function (reason) {
+              setState('Ws', false, '已断开');
+              log('WS 断开：' + reason);
+              stopPing();
+            });
+          })
+          .catch(function (error) {
+            setState('Ws', false, '失败');
+            log('WS 失败：' + error.message);
+          });
+      }
+      function reconnectSocket() { connectSocket(); }
+
+      var pingTimer = null;
+      function startPing() {
+        stopPing();
+        pingTimer = setInterval(function () {
+          if (!socket || !socket.connected) return;
+          var t = performance.now();
+          socket.timeout(3000).emit('link:ping', { t: Date.now() }, function (error) {
+            if (error) { log('WS ping 超时'); return; }
+            rttSamples.push(Math.round(performance.now() - t));
+            rttSamples = rttSamples.slice(-10);
+            renderRtt();
+          });
+        }, 2000);
+      }
+      function stopPing() { if (pingTimer) { clearInterval(pingTimer); pingTimer = null; } }
+
+      $('btnRecheck').addEventListener('click', function () {
+        lines = [];
+        checkRest();
+        refreshMe();
+        if (!socket || !socket.connected) connectSocket();
+      });
+      $('btnSocket').addEventListener('click', function () {
+        if (socket && socket.connected) { socket.disconnect(); } else { connectSocket(); }
+      });
+
+      // 首屏
+      resetRoomView();
+      refreshMe();
+      checkRest();
+      connectSocket();
+      setInterval(checkRest, 5000);
+    })();
+  </script>
+</body>
+</html>

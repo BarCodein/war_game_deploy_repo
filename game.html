@@ -1,0 +1,62 @@
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争</title>
+  <script type="module" crossorigin src="/assets/game-BhfexQ5Z.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/config-Dg5kmt0j.js">
+  <link rel="modulepreload" crossorigin href="/assets/map-CUEI_L2J.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-storage-Cb3Vs5Be.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-CiThXJ5X.js">
+  <link rel="modulepreload" crossorigin href="/assets/level-BnrBJt58.js">
+  <link rel="modulepreload" crossorigin href="/assets/i18n-D2YcygJu.js">
+  <link rel="modulepreload" crossorigin href="/assets/battleChrome-BlYPOTNb.js">
+  <link rel="stylesheet" crossorigin href="/assets/battleChrome-BcZBMPGA.css">
+</head>
+<body class="game-fullscreen">
+  <!-- 战场外壳（顶栏 / 画布 / 结算）由 src/rendering/battleChrome.js 挂载：
+       与联机对局页共用同一份 DOM 与 styles.css 的 class，避免两份 HTML 漂移 -->
+  <div id="battle-root"></div>
+
+  <script src="/audio.js"></script>
+  <script>window.BGM_SONG = 'zaitaihangshandshang';</script>
+  <script src="/bgm-controller.js"></script>
+  <!-- 按账号隔离的本地存储（classic script 版；与 src/user-storage.js 同逻辑） -->
+  <script src="/user-storage.js"></script>
+  <script src="/tutorial.js"></script>
+  <script>
+    // UI 音效：暂停 / 速度切换 / 主菜单 / 缩放复位 / 返回编辑器 / 重新开始
+    window.bindSfx && window.bindSfx({
+      '#pauseButton': 'button',
+      '.speed-controls button': 'toggle',
+      '.editor-link': 'click',
+      '#zoomReset': 'button',
+      '#exitPlaytest': 'click',
+      '#restartButton': 'button'
+    });
+    // 注：任务面板（vg-task-list）与左上角计时器（#vgClockText）现由 src/rendering/hud.js
+    // 的 renderMission / renderTimer 驱动真实游戏数据（world.mess 任务规则 + world.time）。
+    // 三角点击绑定也在 hud.js 重建列表时重绑，此处不再重复。
+    // 战场通讯：监听 #eventLog 子节点变化时显示 4s 后渐隐消失
+    (function() {
+      const feed = document.querySelector('.feed-overlay');
+      const log = document.querySelector('#eventLog');
+      if (!feed || !log) return;
+      let hideTimer = null;
+      // 启动后等游戏初始化（4s）再首次显示 4s
+      const showAndFade = () => {
+        feed.classList.add('vg-feed-active');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => feed.classList.remove('vg-feed-active'), 4000);
+      };
+      // 首次：等 Phaser/boot 启动后（约 1.5s）显示一次"通讯已接通"
+      setTimeout(showAndFade, 1500);
+      // 后续：监听 eventLog 子节点变化（hud.js 写入新事件时）
+      new MutationObserver((muts) => {
+        // 过滤掉只是 textContent 变化的；只要新增 child 才显示
+        if (muts.some(m => m.addedNodes.length > 0)) showAndFade();
+      }).observe(log, { childList: true });
+    })();
+  </script>
+</body>
+</html>

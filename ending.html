@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 — 结局</title>
+  <link rel="stylesheet" crossorigin href="/assets/battlepages-lBxNZB7M.css">
+</head>
+<body>
+
+  <!-- 未登录守卫：与 battlechoose / result 同一套（classic script 页面不能 import /src/auth.js） -->
+  <script>
+    (function () {
+      try {
+        var session = JSON.parse(localStorage.getItem('war-of-dots.session') || 'null');
+        if (session && session.username) return;
+        var next = window.location.pathname + window.location.search + window.location.hash;
+        window.location.replace('/login.html?next=' + encodeURIComponent(next));
+      } catch (e) {
+        window.location.replace('/login.html');
+      }
+    })();
+  </script>
+
+  <!-- ==================== 结局视频（结构与 battlebackground.html 的入场视频一致） ====================
+       进入页面先播放结局视频（全屏覆盖，带声音）。
+       视频开头 5 秒显示标题，之后渐隐，视频继续播放；
+       点击任意位置可随时跳过；视频播完 / 出错（素材缺失）时淡出，进入下方内容区。
+       ★ 声音：浏览器只允许「用户交互过的文档」带声音自动播放。被拦下时先静音放画面，
+         并在**第一次点击 / 按键**时自动接回声音（不弹按钮）；那一次点击不算"跳过"，
+         再点一次才跳过（声音本来就正常时，第一次点击照旧跳过）。
+       ★ 接入方式：视频 src 由 JS 从 ENDING_DATA.video 填充（当前 = ./assets/video/end.mp4）。
+         ENDING_DATA.video 置空 → 不自动播放，标题卡显示 2.6 秒后直接进内容区。
+  =============================================================== -->
+  <div class="bbg-intro-overlay" id="endingIntroOverlay">
+    <div class="bbg-intro-video">
+      <!-- 不写死 <source>：视频源由下面的脚本设置到 video.src 并 load()，
+           否则浏览器在解析时就用它开始资源选择，之后再改 src 不生效（同 battlebackground）。 -->
+      <video id="endingIntroVid" autoplay playsinline></video>
+    </div>
+    <!-- 开场标题：视频开头显示，5 秒后渐隐 -->
+    <div class="bbg-intro-content" id="endingIntroContent">
+      <span class="cut-eyebrow">CAMPAIGN COMPLETE</span>
+      <h1 id="endingIntroTitle"></h1>
+      <p id="endingIntroSubtitle"></p>
+    </div>
+  </div>
+
+  <!-- ==================== 导航条 ==================== -->
+  <nav class="battle-nav">
+    <div class="battle-nav-inner">
+      <a class="battle-nav-back" href="./battlechoose.html">&larr; 返回关卡</a>
+      <a class="battle-nav-brand" href="./index.html">
+        <span class="nav-mark">&#9876;</span> 沙盘战争
+      </a>
+    </div>
+  </nav>
+
+  <!-- ==================== 页面标题（JS 按 ENDING_DATA 填充） ==================== -->
+  <section class="battle-hero">
+    <span class="hero-eyebrow">CAMPAIGN COMPLETE</span>
+    <h1 id="endingTitle"></h1>
+    <p class="hero-subtitle" id="endingSubtitle"></p>
+  </section>
+
+  <div class="bbg-shell">
+
+    <!-- ==================== 战役成果 ==================== -->
+    <section class="bbg-section">
+      <h2>战役成果</h2>
+      
+      <div class="bbg-text" id="endingResult"></div>
+    </section>
+
+    <!-- ==================== 历史意义 ==================== -->
+    <section class="bbg-section">
+      <h2>历史意义</h2>
+      <div class="bbg-text" id="endingMeaning"></div>
+    </section>
+
+    <!-- ==================== 尾声 ==================== -->
+    <section class="bbg-section">
+      <h2>未完待续</h2>
+      <div class="bbg-text" id="endingEpilogue"></div>
+    </section>
+
+    <div class="bbg-img-box">
+        <!-- ★ 结局画面（JS 从 ENDING_DATA.mapImg 填充；当前是占位图 assets/picture/ending_pic.jpeg） -->
+        <img id="endingSituation" src="" alt="战役结局画面">
+     </div>
+
+    <!-- ==================== 返回战役选择 ==================== -->
+    <div class="bbg-start">
+      <a class="battle-btn" id="endingBack" href="./battlechoose.html">返回战役选择</a>
+    </div>
+
+  </div>
+
+  <!-- 轻量富文本渲染：先转义再放行白名单标签（<br>/<strong>…），
+       必须在下面的结局数据脚本之前同步加载，保证 window.richText 已就绪 -->
+  <script src="/richText.js"></script>
+  <script>
+    /* =========================================================
+       结局数据字典（与 battlebackground.html 的 CAMPAIGNS 同一种模式）：
+       页面框架对所有结局都一样，只是画面与文案不同。
+       现在只有一个通用结局；将来要分结局就在这里加键，
+       并用 ?ending=<key> / #ending=<key> 切换。
+       ========================================================= */
+    var ENDING_DATA = {
+      ending: {
+        title: '全战役通关',
+        subtitle: '1946年12月 — 1949年4月 · 从宿北到渡江',
+        video: 'http://179.255.122.44/videos/end.mp4',
+        // 备用源：远端慢 / 挂掉时自动切到仓库里的同一份文件（播放控制里有切换逻辑）。
+        // 两份文件名与内容一致，换源不会出现"接不上"的画面。
+        videoFallback: './assets/video/end.mp4',
+        mapImg: './assets/picture/end.jpeg',
+        mapAlt: '一定要解放台湾',
+        resultHtml:
+          '<strong>作战成果：</strong>宿北战役全歼整编第69师；塔山阻击战守住锦州门户；双堆集围歼黄维第十二兵团；' +
+          '平津战役夺取天津、张家口，促成北平和平解放；渡江战役突破长江防线，解放南京。<br><br>' +
+          '<strong>我方部队：</strong>华东野战军、中原野战军、东北野战军与华北军区部队，' +
+          '以及推着小推车支前的亿万民众。',
+        meaning:
+          '从1946年12月到1949年4月，人民解放军由战略防御转入战略进攻，再由战略决战走向战略追击。<br>' +
+          '为有牺牲多壮志，敢教日月换新天。'+
+          '宿北、塔山、双堆集、平津、渡江——战士们在每一处战场都洒下了热血，' +
+          '也把希望和未来洒向了辽阔的祖国大地。<br><br>',
+        epilogue:
+          '多少事，从来急<br>天地转，光阴迫<br>'+
+          '一万年太久，只争朝夕<br><br>'+
+          '一定要解放台湾！<br><br>' ,
+        backHref: './battlechoose.html'
+      }
+    };
+
+    /* ---------- 按 ?ending= 填充页面内容（缺省用字典里的第一个结局） ---------- */
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+
+      // 结局 key 三重兜底：?ending= → #ending= → 字典第一项。
+      // 兜底必须能接住"没有 key 或 key 写错"的情况：直接读字典里不存在的键会让
+      // data 为 undefined，下面第一行就抛错，整页文案/图/按钮全都不设置。
+      var requested = params.get('ending') || hashParams.get('ending') || '';
+      var key = ENDING_DATA[requested] ? requested : null;
+      var data = ENDING_DATA[key] || ENDING_DATA[Object.keys(ENDING_DATA)[0]];
+      if (!data) return;
+
+      document.title = '沙盘战争 — ' + data.title;
+      document.getElementById('endingTitle').textContent = data.title;
+      document.getElementById('endingSubtitle').textContent = data.subtitle;
+      document.getElementById('endingIntroTitle').textContent = data.title;
+      document.getElementById('endingIntroSubtitle').textContent = data.subtitle;
+      // 显式说明"没找到那个结局"，不静默显示别的
+      if (requested && !key) {
+        document.getElementById('endingSubtitle').textContent =
+          data.subtitle + '（未找到结局「' + requested + '」，显示默认结局）';
+      }
+
+      var situation = document.getElementById('endingSituation');
+      situation.src = data.mapImg;
+      situation.alt = data.mapAlt;
+
+      // 三个文本字段允许写少量富文本（<br> 换行、<strong> 加粗），统一走 richText()
+      var render = window.richText || function (text) { return String(text == null ? '' : text); };
+      document.getElementById('endingResult').innerHTML = render(data.resultHtml);
+      document.getElementById('endingMeaning').innerHTML = render(data.meaning);
+      document.getElementById('endingEpilogue').innerHTML = render(data.epilogue);
+
+      // 返回战役选择（结构同 battlebackground 的"开始指挥"）
+      var backBtn = document.getElementById('endingBack');
+      if (backBtn && data.backHref) backBtn.setAttribute('href', data.backHref);
+
+      // 视频源：必须设到 <video> 自身并调用 load()（同 battlebackground 的说明）
+      var video = document.getElementById('endingIntroVid');
+      if (video && data.video) {
+        video.src = data.video;
+        // 备用源挂在 data- 属性上，交给下面播放控制里的"远端挂了就换源"逻辑
+        if (data.videoFallback) video.setAttribute('data-fallback', data.videoFallback);
+        video.load();
+      }
+    })();
+
+    /* =========================================================
+       结局视频播放控制（逻辑与 battlebackground 的入场视频一致）：
+       - play 后 5 秒 → 渐隐标题（视频继续）
+       - ended → 淡出整个 overlay，滚到内容区
+       - 点击任意位置 → 立即淡出
+       - error（素材缺失/解码失败）→ 直接结束，不卡死
+       - ENDING_DATA.video 为空 → 不播放，标题卡 2.6 秒后进内容区
+       ========================================================= */
+    (function () {
+      var overlay = document.getElementById('endingIntroOverlay');
+      var video = document.getElementById('endingIntroVid');
+      var content = document.getElementById('endingIntroContent');
+      if (!overlay) return;
+
+      var finished = false;
+      var titleHidden = false;
+      function hideTitle() {
+        if (titleHidden || !content) return;
+        titleHidden = true;
+        content.classList.add('fade-out');
+      }
+      function endIntro() {
+        if (finished) return;
+        finished = true;
+        hideTitle();
+        // 视频自带音轨：立刻停掉，免得和随后起的结局 BGM 叠在一起
+        try { video.pause(); } catch (e) {}
+        disarmAutoUnmute(); // 收场后不该再被一次点击"恢复声音"
+        overlay.classList.add('fade-out');
+        // 视频播完 / 被跳过 → 起结局 BGM（钢琴曲）。
+        // BGM 由 bgm-controller 注入的 iframe 播放，这里只负责"可以开始了"；
+        // 用户显式关过 BGM 时 BgmStart() 返回 false，不会硬放。
+        if (window.BgmStart) window.BgmStart();
+        setTimeout(function () {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          var firstSection = document.querySelector('.bbg-shell .bbg-section');
+          if (firstSection) firstSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 700);
+      }
+
+      // 点击 overlay 任意位置 → 跳过。
+      // ★ 例外：带声音的自动播放被浏览器拦下时（此刻正静音放），第一次点击用来接回声音、
+      // **不**跳过（鼠标用户没有别的方式给出用户激活，否则声音永远接不回来），再点一次才跳过。
+      // 声音正常时（例如浏览器已允许该站点自动播放）第一次点击就跳过，行为不变。
+      overlay.addEventListener('click', endIntro);
+
+      /* ★ 黑屏的根因就在这两行 class 上：
+         battlepages.css 里 `.bbg-intro-video video` 与 `.bbg-intro-content` 默认
+         `opacity:0`，只有加上 `.is-ready` 才淡入（battlebackground 是在 play 事件里加的）。
+         结局页当初漏了这一步 → 遮罩永远停在 #000 上，看着就是"视频黑屏"。
+         这里在"解出第一帧 / 开始播放 / 1.5 秒兜底"三处都补上，保证任何情况下都有画面或标题。 */
+      var videoBox = document.querySelector('.bbg-intro-video');
+      function revealIntro() {
+        if (videoBox) videoBox.classList.add('is-ready');
+        if (content) content.classList.add('is-ready');
+      }
+
+      // 兜底：1.5 秒还没就绪也先把遮罩内容亮出来，绝不停在纯黑上
+      setTimeout(revealIntro, 1500);
+
+      // 播放尝试。这里有两个"把声音弄丢"的坑，都踩过：
+      //   1. 刚 `video.load()` 就 `play()`：浏览器常以
+      //      AbortError（"play() request was interrupted by a new load request"）拒绝，
+      //      这是**加载竞态**，不是自动播放策略；
+      //   2. 远端素材加载失败时 play() 会以 NotSupportedError 拒绝。
+      // 老写法只要 play() 被拒就 `muted = true` 再试，于是上面两种情况下
+      // 视频会被永久静音（画面照放、就是没声音）。现在的规则：
+      //   · 先等到真有数据（loadeddata / canplay）再播，绕开竞态；
+      //   · **只有 NotAllowedError（浏览器不许带声音自动播放）才退到静音**；
+      //   · 其它失败原样重试，不动静音状态，真正的素材问题交给 error / 看门狗兜底。
+      //
+      // ★ 另外：被 NotAllowedError 拦下之后**静音不是终局**。浏览器（Chrome/Edge）的自动播放策略
+      // 只允许「用户已经交互过的文档」带声音播放，所以刚打开页面就被拦是正常的；但**一旦用户
+      // 碰了页面**（点击/按键/触屏），同一个文档就获得用户激活，可以立刻取消静音。
+      // 所以这里挂一个"第一次真实交互就恢复声音"的钩子：不弹按钮、不打断画面，
+      // 实测（Edge，静态部署、全新 profile）点击后 0 帧内 muted 由 true → false 且继续播。
+      // 注意 mousemove / 悬停**不算**用户激活（规范如此），所以只监听点击类与键盘事件。
+      var unmuteArmed = false;
+      var pendingUnmute = null; // 已挂上的"第一次交互就恢复声音"处理器（收场时要摘掉）
+      function disarmAutoUnmute() {
+        if (!pendingUnmute) return;
+        window.removeEventListener('click', pendingUnmute, true);
+        window.removeEventListener('keydown', pendingUnmute, true);
+        pendingUnmute = null;
+        unmuteArmed = false;
+      }
+      function armAutoUnmute() {
+        if (unmuteArmed) return;
+        unmuteArmed = true;
+        pendingUnmute = function unmute(event) {
+          disarmAutoUnmute();
+          if (!video.muted || finished || video.ended) return; // 已经在响 / 已经收场
+          // 这一次点击只用来"接回声音"，不当成跳过：鼠标用户除了点击没有别的方式给出用户激活，
+          // 若同时把视频跳掉，声音就永远接不回来了。拦掉事件传播 → 跳过要再点一次。
+          // （声音本来就正常时 pendingUnmute 不会被挂上，点击照旧立刻跳过。）
+          if (event && event.type === 'click' && event.stopPropagation) event.stopPropagation();
+          video.muted = false;
+          var resumed = video.play();
+          if (resumed && typeof resumed.catch === 'function') {
+            resumed.catch(function () { video.muted = true; }); // 还是不行就退回静音，画面不受影响
+          }
+        };
+        // 只监听 click / keydown：click 正是"跳过"用的那个手势，拿来当用户激活最省事；
+        // 不监听 pointerdown / mousedown / touchstart —— 它们在 click 之前就触发，
+        // 会让"开声音"和"跳过"被拆成两次事件，反而乱。
+        window.addEventListener('click', pendingUnmute, true);
+        window.addEventListener('keydown', pendingUnmute, true);
+      }
+
+      function attemptPlay() {
+        var p = video.play();
+        if (!p || typeof p.catch !== 'function') return;
+        p.catch(function (err) {
+          if (err && err.name === 'NotAllowedError') {
+            // 没有用户手势 → 带声音的自动播放被禁，只能静音放（画面优先，不留黑屏），
+            // 同时等用户第一次交互时自动把声音接回来
+            video.muted = true;
+            var mutedRetry = video.play();
+            if (mutedRetry && typeof mutedRetry.catch === 'function') mutedRetry.catch(endIntro);
+            armAutoUnmute();
+            return;
+          }
+          // 加载竞态等：保持原样再试一次，千万别顺手静音
+          var retry = video.play();
+          if (retry && typeof retry.catch === 'function') {
+            retry.catch(function () { /* 交给 error 事件与看门狗处理 */ });
+          }
+        });
+      }
+
+      function playVideo() {
+        if (video.readyState >= 2) { attemptPlay(); return; } // 已经有画面，直接播
+        var onReady = function () {
+          video.removeEventListener('loadeddata', onReady);
+          video.removeEventListener('canplay', onReady);
+          attemptPlay();
+        };
+        video.addEventListener('loadeddata', onReady);
+        video.addEventListener('canplay', onReady);
+      }
+
+      if (video && video.getAttribute('src')) {
+        // 远端素材（http://179.255.122.44/videos/end.mp4）万一慢 / 挂：
+        // 自动切一次仓库里的同名备份（data-fallback），再不行才收场——
+        // 无论如何不给用户留一块纯黑屏。
+        var fallbackUsed = false;
+        function useFallback() {
+          var alt = video.getAttribute('data-fallback');
+          if (fallbackUsed || !alt) return false;
+          fallbackUsed = true;
+          video.src = alt;
+          video.muted = false; // 换源要重新争取"带声音播放"，别把上一源的失败变成永久静音
+          video.load();
+          playVideo();
+          return true;
+        }
+        var stuckTimer = null;
+        function guardNoFrame() {
+          if (finished || video.readyState >= 2) return; // 已经有画面
+          if (useFallback()) { stuckTimer = setTimeout(guardNoFrame, 5000); return; }
+          endIntro();
+        }
+
+        video.addEventListener('error', function () { if (!useFallback()) endIntro(); });
+        video.addEventListener('loadeddata', function () {
+          clearTimeout(stuckTimer);
+          revealIntro();
+        });
+        video.addEventListener('play', function () {
+          // 注意：这里**不能**清掉看门狗——play 事件只表示"调用了 play()"，
+          // 源挂住时它照样会触发（paused 变 false），但一帧都没有。
+          // 只有 loadeddata（真有画面）才算就绪。
+          revealIntro();
+          setTimeout(hideTitle, 5000);
+        });
+        // 5 秒还没解出一帧（源挂了 / 一直缓冲）→ 换备用源；换了再 5 秒还不行 → 收场。
+        // （自动播放被挡不算卡死：那种情况画面已经就绪、readyState 是 4，
+        //   只是没在播，静音重试那一步会把它播起来。）
+        stuckTimer = setTimeout(guardNoFrame, 5000);
+        playVideo();
+        video.addEventListener('ended', endIntro);
+      } else {
+        // 没有视频源（ENDING_DATA.video 为空）→ 也要把标题卡亮出来，
+        // 否则 CSS 的 opacity:0 会让遮罩同样是一片黑。
+        revealIntro();
+        setTimeout(hideTitle, 5000);
+        setTimeout(endIntro, 2600);
+      }
+    })();
+  </script>
+
+  <script src="/audio.js"></script>
+  <!-- 结局 BGM：曲目固定为钢琴曲（piano_string），且**不在加载时就起播**
+       （BGM_AUTOSTART=false）——等上面的入场视频播完 / 被跳过后，
+       endIntro() 里再调 window.BgmStart() 开始放。 -->
+  <script>window.BGM_SONG = 'piano_string'; window.BGM_AUTOSTART = false;</script>
+  <script src="/bgm-controller.js"></script>
+  <script>
+    // 视频-BGM 互斥（v5：localStorage 标记，零跨 frame 依赖）
+    (function () {
+      var KEY = 'war-of-dots.video-playing';
+      function set(on) { try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} }
+      function bind(v) {
+        if (!v || v.__bgmVideoLock) return;
+        v.__bgmVideoLock = true;
+        v.addEventListener('play',  function () { set(true); });
+        v.addEventListener('ended', function () { set(false); });
+        v.addEventListener('pause', function () { if (!v.ended) set(false); });
+        if (!v.paused && !v.ended) set(true);
+      }
+      function scan() { var vs = document.querySelectorAll('video'); for (var i = 0; i < vs.length; i++) bind(vs[i]); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+      if (window.MutationObserver) new MutationObserver(function (ms) {
+        for (var i = 0; i < ms.length; i++) {
+          var added = ms[i].addedNodes || [];
+          for (var j = 0; j < added.length; j++) {
+            var n = added[j];
+            if (!n || n.nodeType !== 1) continue;
+            if (n.tagName === 'VIDEO') bind(n);
+            else if (n.querySelectorAll) { var qs = n.querySelectorAll('video'); for (var k = 0; k < qs.length; k++) bind(qs[k]); }
+          }
+        }
+      }).observe(document.documentElement, { childList: true, subtree: true });
+      window.addEventListener('pagehide', function () { set(false); });
+      window.addEventListener('beforeunload', function () { set(false); });
+    })();
+  </script>
+  <script>
+    // UI 音效：导航返回 / 返回战役选择
+    window.bindSfx({
+      '.battle-nav a': 'click',
+      '#endingBack': 'button'
+    });
+  </script>
+</body>
+</html>

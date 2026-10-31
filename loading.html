@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 — 加载中</title>
+  <style>
+    /* loading 页专属：复古木纹相框版（参考团队给的样式图） */
+    body {
+      margin: 0;
+      background: #170c05;
+      overflow: hidden;
+      font-family: "Microsoft YaHei", "SimHei", sans-serif;
+      color: #d8b97a;
+    }
+    .loading-screen {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      padding: 0;
+      overflow: hidden;
+      /* 深褐色做旧木纹 / 皮革纹理 */
+      background-color: #241408;
+      background-image:
+        radial-gradient(ellipse at 22% 14%, rgba(92, 56, 28, 0.5) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 86%, rgba(38, 20, 8, 0.6) 0%, transparent 55%),
+        repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.07) 0px, rgba(0, 0, 0, 0.07) 1px, transparent 1px, transparent 7px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 4px),
+        linear-gradient(160deg, #3a2412 0%, #241408 45%, #170c05 100%);
+    }
+
+    /* 顶部进度条面板（铜色边框，RTS 风格） */
+    .loading-top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 18px 28px 14px;
+      z-index: 6;
+      background: linear-gradient(180deg, rgba(8, 5, 2, 0.8) 0%, rgba(8, 5, 2, 0.55) 70%, rgba(0, 0, 0, 0) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .loading-task {
+      font-size: 0.78rem;
+      letter-spacing: 4px;
+      color: #d8b97a;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+    }
+    .loading-progress { width: 100%; max-width: 720px; }
+    .loading-progress .track {
+      width: 100%;
+      height: 12px;
+      border: 1.5px solid #6b4a1a;
+      border-radius: 1px;
+      background: linear-gradient(180deg, #1a1208 0%, #2a1d0c 100%);
+      box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.7),
+        inset 0 -1px 1px rgba(255, 200, 100, 0.05);
+      overflow: hidden;
+      position: relative;
+    }
+    .loading-progress .fill {
+      height: 100%;
+      background: linear-gradient(180deg, rgba(255, 225, 140, 0.95) 0%, #d8a447 30%, #a67427 60%, #6b4a1a 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 10px rgba(216, 164, 71, 0.5);
+      transition: width .25s ease;
+    }
+
+    /* 中央相框：金铜色双层边框包住人像，不放满整个背景 */
+    .loading-frame {
+      position: absolute;
+      top: 48%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(540px, 74vw);
+      padding: 10px;
+      background: linear-gradient(135deg, #b8902f 0%, #d8a847 28%, #f0c060 50%, #d8a847 72%, #b8902f 100%);
+      border: 2px solid #4a3210;
+      box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.75),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.45),
+        inset 0 0 32px rgba(0, 0, 0, 0.35);
+    }
+    .loading-frame-inner {
+      padding: 7px;
+      background: #1a1208;
+      border: 1px solid rgba(0, 0, 0, 0.55);
+      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6);
+    }
+    .loading-frame-inner img {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: sepia(0.1) contrast(1.05) brightness(0.95);
+    }
+
+    /* 相框下方：合并的介绍文字 + 题词 */
+    .loading-text-block {
+      position: absolute;
+      top: calc(48% + min(250px, 35vh));
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      max-width: min(760px, 88vw);
+      padding: 0 24px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.7);
+    }
+    .loading-text-main {
+      font-size: 1.02rem;
+      letter-spacing: 2.5px;
+      color: #f0d088;
+      margin: 0 0 8px;
+    }
+    .loading-text-quote {
+      font-size: 0.82rem;
+      letter-spacing: 1.5px;
+      color: #b89a64;
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    /* 左下角加载提示 */
+    .loading-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 36px;
+      font-size: 0.72rem;
+      letter-spacing: 3px;
+      color: #8c6b2c;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    }
+
+  </style>
+  <link rel="stylesheet" crossorigin href="/assets/battlepages-lBxNZB7M.css">
+</head>
+<body>
+
+  <!-- ==================== 加载过渡页（复古木纹相框版） ====================
+       布局：
+         - 顶部：加载任务 + 铜色进度条
+         - 中央：金铜色相框（内嵌人像，不放满背景）
+         - 相框下方：介绍文字 + 题词（合并到一处）
+         - 左下角：加载提示
+         - 两侧：左右箭头装饰
+       ★ 接口：
+         - 人像：替换 <img id="loadingScene"> 的 src
+         - 介绍文字 / 题词：替换 .loading-text-main / .loading-text-quote
+       ==================================================================== -->
+
+  <div class="loading-screen">
+
+    <!-- 顶部：加载任务 + 进度条 -->
+    <div class="loading-top">
+      <div class="loading-task" id="loadingTask">正在集结部队…</div>
+      <div class="loading-progress">
+        <div class="track">
+          <div class="fill" id="loadingFill" style="width:0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中央相框：人像（JS 按 ?level= 填充 src） -->
+    <div class="loading-frame">
+      <div class="loading-frame-inner">
+        <img id="loadingScene" src="" alt="战役指挥者">
+      </div>
+    </div>
+
+    <!-- 相框下方：介绍文字 + 题词（JS 按 ?level= 填充） -->
+    <div class="loading-text-block">
+      <p class="loading-text-main" id="loadingTextMain"></p>
+      <p class="loading-text-quote" id="loadingTextQuote"></p>
+    </div>
+
+    <!-- 左下角加载提示 -->
+    <div class="loading-hint">加载中</div>
+
+  </div>
+
+  <script src="/audio.js"></script>
+  <script>window.BGM_SONG = 'zaitaihangshandshang';</script>
+  <script src="/bgm-controller.js"></script>
+  <script>
+    /* 关卡 id 三重兜底：?level= → #level= → sessionStorage。
+       静态服务器的 cleanUrls 会把 "…html?level=x" 301 重写成不带 .html 的路径，
+       并**丢掉查询参数**（实测 npx serve 14.x）；只认 ?level= 就会走错关卡。
+       与 battlebackground.html / src/level-link.js 里的规则保持一致。 */
+    window.resolveCampaignLevel = function () {
+      var params = new URLSearchParams(window.location.search);
+      var hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+      var stored = null;
+      try { stored = window.sessionStorage.getItem('war-of-dots.campaign'); } catch (e) { stored = null; }
+      // 只认 #level=<id>：裸 hash（#bench 之类）是别的用途，不能当关卡 id
+      return params.get('level') || hashParams.get('level') || stored || null;
+    };
+
+    /* =========================================================
+       加载页数据字典（参照 member.html / pagedata.js 的模式）：
+       页面框架对所有战役一样，只是人像/文字不同，
+       通过 URL 参数 ?level=<id> 切换展示；新增战役加一条即可。
+       ========================================================= */
+    var LOADING_DATA = {
+      tashan_battle: {
+        portrait: './assets/texture/tashan_pic.png',
+        portraitAlt: '塔山战役战场',
+        intro: '塔山阻击战——掩护锦州攻城阵地的关键阻击战',
+        quote: '「给程子华发报，我不要他的伤亡数字，我只要塔山！」—— 101'
+      },
+      subei_battle: {
+        portrait: './assets/picture/suyu.jpeg',
+        portraitAlt: '宿北战役指挥者粟裕',
+        intro: '宿北战役的指挥者——华中野战军司令员粟裕同志',
+        quote: '「试看峰山下，埋了戴之奇」—— 陈毅'
+      },
+      xian_battle: {
+        portrait: './assets/picture/jieshi.png',
+        portraitAlt: '挖三填一',
+        intro: '西安华清池睡衣登山大赛',
+        quote: '「 优 势 在 我 ！」—— 常公凯申'
+      },
+      shuangduiji_battle: {
+        portrait: './assets/picture/shuangduiji_pic.jpeg',
+        portraitAlt: '中原人民推小推车支援前线',
+        intro: '中原人民推小推车支援前线',
+        quote: '「不要说你们一个纵队，就算是整个中野全部打光了，其他部队照样打过长江去解放全中国！」—— 邓小平'
+      },
+      dujiang_battle: {
+        portrait: './assets/picture/dujiang_pic.jpeg',
+        portraitAlt: '人民解放军跨过长江天险',
+        intro: '人民解放军跨过长江天险',
+        quote: '「我们命令你们：奋勇前进，坚决、彻底、干净、全部地歼灭中国境内一切敢于抵抗的国民党反动派，解放全国人民」——毛泽东、朱德《向全国进军的命令》'
+      },
+      pingjin_battle: {
+        portrait: './assets/picture/pingjin_pic.jpg',
+        portraitAlt: '北平和平解放',
+        intro: '北平和平解放，人民解放军进入北平城',
+        quote: '「坚定守住，就有办法」——傅作义电陈长捷'
+      }
+    };
+
+    /* ---------- 按关卡 id 填充人像与文字（缺省用字典里的第一条） ---------- */
+    (function () {
+      var level = window.resolveCampaignLevel();
+      // 兜底同样不能写死字典里不存在的键（之前写的是 LOADING_DATA.liaoshen，
+      // 而字典里只有 tashan/subei/xian → data 为 undefined → 下面读 portrait 直接抛错）
+      var key = LOADING_DATA[level] ? level : Object.keys(LOADING_DATA)[0];
+      var data = LOADING_DATA[key];
+      if (!data) return;
+      try { window.sessionStorage.setItem('war-of-dots.campaign', key); } catch (e) { /* 忽略 */ }
+
+      var portrait = document.getElementById('loadingScene');
+      if (portrait) {
+        portrait.src = data.portrait;
+        portrait.alt = data.portraitAlt;
+      }
+      var main = document.getElementById('loadingTextMain');
+      var quote = document.getElementById('loadingTextQuote');
+      if (main) main.textContent = data.intro;
+      if (quote) quote.textContent = data.quote;
+    })();
+  </script>
+  <script>
+    (function () {
+      window.playSfx && window.playSfx('loading');
+      var fill = document.getElementById('loadingFill');
+      var task = document.getElementById('loadingTask');
+
+      // 加载任务文案池
+      var tasks = [
+        '正在集结部队…',
+        '正在部署兵力…',
+        '正在侦察敌情…',
+        '正在绘制战场…',
+        '即将进入战场…'
+      ];
+
+      var progress = 0;
+      var lastTaskIdx = -1;
+      var timer = setInterval(function () {
+        progress += Math.random() * 6 + 2;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(timer);
+          if (task) task.textContent = '准备就绪';
+          // 加载完成后跳转：关卡 id 用同一套三重兜底解析（不能只读 ?level=，会被静态服务器丢掉），
+          // 并且把 #level= 一起带过去，保证下一跳也不丢。
+          var level = window.resolveCampaignLevel();
+          var target = level
+            ? './game.html?level=' + encodeURIComponent(level) + '#level=' + encodeURIComponent(level)
+            : './game.html';
+          if (level === 'xian_battle') target = './climb/climb.html'; // 西安事变进登山小游戏
+          setTimeout(function () {
+            window.location.href = target;
+          }, 600);
+        } else {
+          // 按进度阶段切换任务文字
+          var idx = Math.floor(progress / (100 / tasks.length));
+          if (idx >= tasks.length) idx = tasks.length - 1;
+          if (idx !== lastTaskIdx && task) {
+            task.textContent = tasks[idx];
+            lastTaskIdx = idx;
+          }
+        }
+        if (fill) fill.style.width = progress + '%';
+      }, 200);
+    })();
+  </script>
+</body>
+</html>

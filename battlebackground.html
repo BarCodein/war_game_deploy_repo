@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 — 战役背景</title>
+  <link rel="stylesheet" crossorigin href="/assets/battlepages-lBxNZB7M.css">
+</head>
+<body>
+
+  <!-- ==================== 导航条 ==================== -->
+  <nav class="battle-nav">
+    <div class="battle-nav-inner">
+      <a class="battle-nav-back" href="./battlechoose.html">&larr; 返回关卡</a>
+      <a class="battle-nav-brand" href="./index.html">
+        <span class="nav-mark">&#9876;</span> 沙盘战争
+      </a>
+    </div>
+  </nav>
+
+  <!-- ==================== 页面标题（JS 按 ?level= 填充） ==================== -->
+  <section class="battle-hero">
+    <span class="hero-eyebrow">CAMPAIGN BACKGROUND</span>
+    <h1 id="bbgTitle"></h1>
+    <p class="hero-subtitle" id="bbgSubtitle"></p>
+  </section>
+
+  <!-- ==================== 战役背景视频（入场动画） ====================
+       进入页面先播放战役背景视频（全屏覆盖，带声音）。
+       视频开头 5 秒显示标题，之后渐隐，视频继续播放；
+       右上角「跳过入场」按钮可随时跳过；视频完整播完后淡出，
+       进入下方敌我情况/战役目标内容。
+       ★ 接入方式：视频 src 由 JS 按 ?level= 从战役数据字典填充。
+  =============================================================== -->
+  <div class="bbg-intro-overlay" id="bbgIntroOverlay">
+    <div class="bbg-intro-video">
+      <!-- 不写死 <source>：视频源由下面的脚本按 ?level= 设置到 video.src 并 load()。
+           写死 <source> + autoplay 会让浏览器在解析时就用它开始资源选择，
+           之后再改 <source src> 是不生效的（见页面脚本里的说明）。 -->
+      <video id="bbgIntroVid" autoplay playsinline></video>
+    </div>
+    <!-- 开场标题：视频开头显示，5 秒后渐隐 -->
+    <div class="bbg-intro-content" id="bbgIntroContent">
+      <span class="cut-eyebrow">CAMPAIGN BACKGROUND</span>
+      <h1 id="bbgIntroTitle"></h1>
+      <p id="bbgIntroSubtitle"></p>
+    </div>
+    <!-- 点击任意位置跳过入场 -->
+  </div>
+
+  <div class="bbg-shell">
+
+    <!-- ==================== 敌我情况 ==================== -->
+    <section class="bbg-section">
+      <h2>敌我情况</h2>
+      <div class="bbg-img-box">
+        <!-- ★ 战役态势图（JS 按 ?level= 填充 src） -->
+        <img id="battleSituation" src="" alt="战役态势图">
+      </div>
+      <div class="bbg-text" id="bbgForces"></div>
+    </section>
+
+    <!-- ==================== 战役目标 ==================== -->
+    <section class="bbg-section">
+      <h2>战役目标</h2>
+      <div class="bbg-text" id="bbgObjective"></div>
+    </section>
+
+    <!-- ==================== 历史背景 ==================== -->
+    <section class="bbg-section">
+      <h2>历史背景</h2>
+      <div class="bbg-text" id="battleContext"></div>
+    </section>
+
+    <!-- ==================== 开始战斗 ==================== -->
+    <div class="bbg-start">
+      <a class="battle-btn" id="startBattleBtn" href="./loading.html">&#9876; 开始指挥</a>
+    </div>
+
+  </div>
+
+  <!-- 轻量富文本渲染：先转义再放行白名单标签（<br>/<strong>…），
+       必须在下面的战役数据脚本之前同步加载，保证 window.richText 已就绪 -->
+  <script src="/richText.js"></script>
+  <script>
+    /* =========================================================
+       战役数据字典（参照 member.html / pagedata.js 的模式）：
+       所有战役的背景内容集中在这里，新增战役只需加一条。
+       页面框架和结构对所有战役都一样，只是文本和图片不同，
+       通过 URL 参数 ?level=<id> 切换展示。
+       ========================================================= */
+    var CAMPAIGNS = {
+      "fracture-canyon-tutorial": {
+        title: '基础教学',
+        subtitle: '新兵指挥训练 · 断裂峡谷',
+        video: '',
+        mapImg: './assets/texture/tashan_map.png',
+        mapAlt: '教学战役态势图',
+        forcesHtml:
+          '<strong>我方部队：</strong>3 个步兵师，由你指挥学习基础操作<br><br>' +
+          '<strong>敌方部队：</strong>1 个步兵师，驻守在前方不远处',
+        objective: '按照右侧教学面板的引导，依次完成：选择单位 → 移动 → 攻击 → 取消选择 → 框选 → 增减选择 → 绘制行军轨迹。全部完成后自动返回关卡选择。',
+        history: '这是你的第一场指挥任务。在断裂峡谷的训练场中，你将学习 RTS 游戏的核心操作：单位选择、移动指令、攻击指令、框选多单位、Shift 增减选择，以及绘制多路径点行军轨迹。掌握这些操作后，才能胜任后续的真实战役。',
+        loadingHref: './loading.html?level=fracture-canyon-tutorial'
+      },
+      "tactical-training-tutorial": {
+        title: '地形与士气教学',
+        subtitle: '战术演训场 · 地形与士气',
+        video: '',
+        mapImg: './assets/texture/tashan_map.png',
+        mapAlt: '战术演训场态势图',
+        forcesHtml:
+          '<strong>我方部队：</strong>4 个步兵师，分布在不同地形区域用于演练<br><br>' +
+          '<strong>敌方部队：</strong>4 个步兵师，驻守在城镇、水域、山地等不同地形',
+        objective: '按照右侧教学面板引导，依次完成：侦察地形 → 道路机动 → 抢占城镇 → 城镇歼敌 → 穿越山地 → 水域歼敌 → 士气决胜总攻。体会不同地形对移动、防御和士气的影响。',
+        history: '战场之上，地形决定生死。道路跑得快，城镇守得住，山地好设伏，水域是绝地。而士气更是军队的灵魂——士气高昂者以弱胜强，士气崩溃者一溃千里。在战术演训场中，你将亲手体会每一种地形的优劣，掌握士气决胜的奥秘，为真正的战役做好准备。',
+        loadingHref: './loading.html?level=tactical-training-tutorial'
+      },
+      tashan_battle: {
+        title: '塔山阻击战',
+        subtitle: '1948年10月10日 — 10月15日 · 东北地区',
+        video: 'http://179.255.122.44/videos/tashan.mp4',
+        mapImg: './assets/texture/tashan_map.png',
+        mapAlt: '塔山战役态势图',
+        forcesHtml:
+          '<strong>我方部队：</strong>东北野战军第四纵队，共八个师八万余人，在锦州西南塔山一带布下防线，进行防御作战<br><br>' +
+          '<strong>敌方部队：</strong>国民党军侯镜如指挥的“东进兵团”（含第62军、第39军、第92军及独立第95师等11个师，共约十万人），增援锦州',
+        objective: '坚守塔山主阵地，阻止国军增援锦州。在国军的海陆协同攻击下必须坚持五天（10min）直到四野主力攻克锦州',
+        history: '此次国民党军进攻塔山，在蒋介石严令之下，各军、师长均能奋不顾身，亲临最前线指挥，海空军也频频出动配合，这在国民党军战史上是不多见的。然而，在人民解放军的顽强阻击下，始终不能越雷池一步，塔山阵地岿然不动。第四纵队在六昼夜的阻击作战中，给予国民党军队沉重打击，有力保障了攻锦作战的胜利，林彪、罗荣桓评价塔山阻击战是“模范的英勇顽强的防御战”，“对我当时攻击锦州，取得调整部署与攻击准备时间，起了决定的作用”。',
+        loadingHref: './loading.html?level=tashan_battle'
+      },
+      subei_battle: {
+        title: '宿北战役',
+        subtitle: '1946年12月 · 江苏宿迁北部',
+        video: 'http://179.255.122.44/videos/subei.mp4',
+        mapImg: './assets/texture/subei_battle_map.jpg',
+        mapAlt: '宿北战役态势图',
+        forcesHtml:
+          '<strong>我方部队：</strong>山东野战军与华中野战军，由陈毅、粟裕统一指挥，采取"集中兵力、各个歼灭"的作战方针，隐蔽集结、诱敌深入、抓住战机。<br><br>' +
+          '<strong>敌方部队：</strong>国民党军整编第69师、整编第11师等部约2万余人，分路向宿迁以北地区进犯，企图打通陇海路东段，向华东解放区腹地推进。',
+        objective: '集中优势兵力，抓住敌军分散冒进的战机，首先围歼整编第69师于宿北地区；打破国民党军对华东解放区的进攻，扭转华东战场的不利局面。',
+        history: '1946年6月全面内战爆发后，国民党军向华东解放区发起大规模进攻。宿北战役是山东野战军与华中野战军首次协同作战，全歼国民党军整编第69师，毙其师长戴之奇，是华东战场战略防御阶段的重要转折。',
+        loadingHref: './loading.html?level=subei_battle'
+      },
+      xian_battle: {
+        title: '西安事变',
+        subtitle: '1936年12月12日 · 西安华清池',
+        video: 'http://179.255.122.44/videos/xian.mp4',
+        mapImg: './assets/picture/xian.png',
+        mapAlt: '介于两石',
+        forcesHtml:
+          '<strong>我方部队：</strong>东北军士兵登山搜寻<br><br>' +
+          '<strong>敌方部队：</strong>蒋介石逃往后山',
+        objective: '登上山顶，抓获蒋介石',
+        history: ' 校长玩夜跑<br>学良全军满山找<br> 光头不得了<br>   最中正',
+        loadingHref: './loading.html?level=xian_battle'
+      },
+      shuangduiji_battle: {
+        title: '双堆集战役',
+        subtitle: '1948年11月 · 浍河南岸',
+        video: 'http://179.255.122.44/videos/shuangduiji.mp4',
+        mapImg: './assets/texture/shuangduiji_map.png',
+        mapAlt: '双堆集战役图',
+        forcesHtml:
+          '<strong>我方部队：</strong>由刘伯承，邓小平，陈毅指挥的中原野战军1,2,3,4,6,9,11纵队，以及华东野战军3，7纵队<br><br>' +
+          '<strong>敌方部队：</strong>由黄维指挥的国军王牌部队第十二机械化兵团',
+        objective: '阻止黄维兵团渡过浍河，将其包围在双堆集。阻止其突围企图，在华野援军到来后，在限定时间内将其全部歼灭。',
+        history: ' 该战役因黄维兵团受命解围碾庄黄百韬兵团触发，解放军采取诱敌深入策略于11月25日完成合围。国民党军多次突围失败后转入固守，期间第110师师长廖运周率部起义打乱其突围计划。 解放军通过大规模近迫作业压缩包围圈，12月5日总前委下达总攻命令，分东、西、南三个集团协同作战，华野部队加入总攻序列。 至15日全歼守敌，共歼灭国民党军计12万余人，俘虏兵团司令黄维、副司令吴绍周。此役解放军伤亡3万余人，为后续全歼杜聿明集团奠定基础。',
+        loadingHref: './loading.html?level=shuangduiji_battle'
+      },
+      dujiang_battle: {
+        title: '渡江战役',
+        subtitle: '1949年4月 · 长江中下游',
+        video: 'http://179.255.122.44/videos/dujiang.mp4',
+        mapImg: './assets/texture/dujiang_map.png',
+        mapAlt: '渡江战役图',
+        forcesHtml:
+          '<strong>我方部队：</strong>中国人民解放军第二野战军、第三野战军和中原军区、华东军区部队共约120万人<br><br>' +
+          '<strong>敌方部队：</strong>国民党汤恩伯部、白崇禧部共约70万人',
+        objective: '打过长江去，解放南京',
+        history: '七律·人民解放军占领南京<br>钟山风雨起苍黄，百万雄师过大江<br>虎踞龙盘今胜昔，天翻地覆慨而慷<br>宜将剩勇追穷寇，不可沽名学霸王<br>天若有情天亦老，人间正道是沧桑<br>',
+        loadingHref: './loading.html?level=dujiang_battle'
+      },
+      pingjin_battle: {
+        title: '平津战役',
+        subtitle: '1948年11月 · 平津地区',
+        video: 'http://179.255.122.44/videos/pingjin.mp4',
+        mapImg: './assets/texture/pingjin_map.png',
+        mapAlt: '平津战役图',
+        forcesHtml:
+          '<strong>我方部队：</strong>东北野战军主力约 70 万人入关，会同华北军区部队约 20 万人<br><br>' +
+          '<strong>敌方部队：</strong>傅作义集团（华北「剿总」）约 50 万人，分驻张家口、北平、天津、塘沽',
+        objective: '先打两头、后取中间：限时攻克天津、夺取张家口，促成北平和平解放。',
+        history: '1948年11月29日战役发起：华北军区部队包围张家口，吸引傅作义部西援；东北野战军主力提前隐蔽入关，切断平津联系。12月22日攻克新保安、24日解放张家口，傅系主力第35军等部被歼。1949年1月14日对天津发起总攻，经 29 小时激战全歼守军 13 万余人，天津解放。随后傅作义接受和平改编，1月31日北平和平解放，平津战役结束，共歼灭和改编国民党军 52 万余人。',
+        loadingHref: './loading.html?level=pingjin_battle'
+      }
+    };
+
+    /* ---------- 按 ?level= 填充页面内容（缺省用字典里的第一场战役） ---------- */
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+      var stored = null;
+      try { stored = window.sessionStorage.getItem('war-of-dots.campaign'); } catch (e) { stored = null; }
+
+      // 关卡 id 三重兜底：?level= → #level= → sessionStorage。
+      // 静态服务器的 cleanUrls 会把 "/battlebackground.html?level=x" 301 重写成
+      // "/battlebackground"，**查询参数会被丢掉**（实测 npx serve 14.x）；
+      // 只认 ?level= 的话这里就退回字典第一项 —— 表现就是"点宿北却显示塔山"。
+      var requested = params.get('level') || hashParams.get('level') || stored || '';
+      var level = CAMPAIGNS[requested] ? requested : null;
+      // 注意：这里必须能兜住"没有 id 或 id 写错"的情况。
+      // 之前兜底写的是 CAMPAIGNS.liaoshen，但字典里根本没有这个键 →
+      // data 为 undefined → 下面第一行 data.title 抛 TypeError → 整段脚本中断，
+      // 标题/态势图/文案/开始按钮/视频源全都不会设置（看起来就是"视频没换"）。
+      var data = CAMPAIGNS[level] || CAMPAIGNS[Object.keys(CAMPAIGNS)[0]];
+      if (!data) return;
+      try { window.sessionStorage.setItem('war-of-dots.campaign', level); } catch (e) { /* 忽略 */ }
+
+      document.title = '沙盘战争 — ' + data.title;
+      document.getElementById('bbgTitle').textContent = data.title;
+      document.getElementById('bbgSubtitle').textContent = data.subtitle;
+      document.getElementById('bbgIntroTitle').textContent = data.title;
+      document.getElementById('bbgIntroSubtitle').textContent = data.subtitle;
+      // 显式说明"没找到你点的那一关"，不静默显示别的战役
+      if (requested && !level) {
+        document.getElementById('bbgSubtitle').textContent =
+          data.subtitle + '（未找到战役「' + requested + '」，显示默认战役）';
+      }
+
+      var situation = document.getElementById('battleSituation');
+      situation.src = data.mapImg;
+      situation.alt = data.mapAlt;
+
+      // 三个文本字段允许写少量富文本（<br> 换行、<strong> 加粗），统一走 richText()：
+      // 之前 history 用 textContent 渲染，<br> 会被当成普通文字显示出来
+      // （西安事变那条历史的 "…<br>…" 就是这么露出来的）。
+      var render = window.richText || function (text) { return String(text == null ? '' : text); };
+      document.getElementById('bbgForces').innerHTML = render(data.forcesHtml);
+      document.getElementById('bbgObjective').innerHTML = render(data.objective);
+      document.getElementById('battleContext').innerHTML = render(data.history);
+
+      // 开始指挥 → 对应战役的加载页（同样带上 #level=，避免被静态服务器重写掉查询参数）
+      var startBtn = document.getElementById('startBattleBtn');
+      if (startBtn) {
+        var loadingHref = data.loadingHref
+          + (level ? (data.loadingHref.indexOf('#') < 0 ? '#level=' + encodeURIComponent(level) : '') : '');
+        startBtn.setAttribute('href', loadingHref);
+        startBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          window.location.href = loadingHref;
+        });
+      }
+
+      // 视频源按战役切换：必须设到 <video> 自身并调用 load()。
+      // 只改 <source src> 不生效——资源选择在 autoplay 开始时就完成了，
+      // 之后改属性浏览器不会再评估（表现就是永远播默认那支视频）。
+      var video = document.getElementById('bbgIntroVid');
+      if (video && data.video) {
+        video.src = data.video;
+        video.load();
+      }
+    })();
+
+    /* =========================================================
+       战役背景入场视频：
+       - play 后 5 秒 → 渐隐标题（视频继续）
+       - ended → 淡出整个 overlay，滚到内容区
+       - 右上角「跳过入场」→ 立即淡出
+       - error（视频缺失/解码失败）→ 直接结束，不卡死
+       ========================================================= */
+    (function () {
+      var overlay = document.getElementById('bbgIntroOverlay');
+      var video = document.getElementById('bbgIntroVid');
+      var content = document.getElementById('bbgIntroContent');
+      if (!overlay) return;
+
+      var finished = false;
+      var titleHidden = false;
+      function hideTitle() {
+        if (titleHidden || !content) return;
+        titleHidden = true;
+        content.classList.add('fade-out');
+      }
+      function endIntro() {
+        if (finished) return;
+        finished = true;
+        hideTitle();
+        overlay.classList.add('fade-out');
+        setTimeout(function () {
+          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          var firstSection = document.querySelector('.bbg-shell .bbg-section');
+          if (firstSection) firstSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 700);
+      }
+
+      // 点击 overlay 任意位置 → 跳过入场
+      overlay.addEventListener('click', endIntro);
+
+      if (video) {
+        video.addEventListener('error', endIntro);
+        video.addEventListener('play', function () {
+          // 视频真正开始播放 → 触发"黑色渐显"与"文字浮入"过渡
+          var vbox = document.querySelector('.bbg-intro-video');
+          var txt  = document.getElementById('bbgIntroContent');
+          if (vbox) vbox.classList.add('is-ready');
+          if (txt)  txt.classList.add('is-ready');
+          setTimeout(hideTitle, 5000);
+        });
+        var p = video.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(function () {
+            video.muted = false;
+            var p2 = video.play();
+            if (p2 && typeof p2.catch === 'function') {
+              p2.catch(endIntro);
+            }
+          });
+        }
+        video.addEventListener('ended', endIntro);
+      } else {
+        setTimeout(hideTitle, 5000);
+        setTimeout(endIntro, 2600);
+      }
+    })();
+  </script>
+
+  <script src="/audio.js"></script>
+  <script>window.BGM_SONG = 'zaitaihangshandshang';</script>
+  <script src="/bgm-controller.js"></script>
+  <script>
+    // 视频-BGM 互斥（v5：localStorage 标记，零跨 frame 依赖）。
+    // 任意 <video> play/ended/pause → 写 localStorage.war-of-dots.video-playing = '1'/'0'，
+    // bgm.html 每 100ms 轮询这个标记。
+    (function () {
+      var KEY = 'war-of-dots.video-playing';
+      function set(on) { try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} }
+      function bind(v) {
+        if (!v || v.__bgmVideoLock) return;
+        v.__bgmVideoLock = true;
+        v.addEventListener('play',  function () { set(true); });
+        v.addEventListener('ended', function () { set(false); });
+        v.addEventListener('pause', function () { if (!v.ended) set(false); });
+        if (!v.paused && !v.ended) set(true);
+      }
+      function scan() { var vs = document.querySelectorAll('video'); for (var i = 0; i < vs.length; i++) bind(vs[i]); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+      // 兜底：动态插入的 video
+      if (window.MutationObserver) new MutationObserver(function (ms) {
+        for (var i = 0; i < ms.length; i++) {
+          var added = ms[i].addedNodes || [];
+          for (var j = 0; j < added.length; j++) {
+            var n = added[j];
+            if (!n || n.nodeType !== 1) continue;
+            if (n.tagName === 'VIDEO') bind(n);
+            else if (n.querySelectorAll) { var qs = n.querySelectorAll('video'); for (var k = 0; k < qs.length; k++) bind(qs[k]); }
+          }
+        }
+      }).observe(document.documentElement, { childList: true, subtree: true });
+      // 离开页面前清掉标记，避免下一页 BGM 永远不恢复
+      window.addEventListener('pagehide', function () { set(false); });
+      window.addEventListener('beforeunload', function () { set(false); });
+    })();
+  </script>
+  <script>
+    // UI 音效：导航返回 / 开始指挥
+    window.bindSfx({
+      '.battle-nav a': 'click',
+      '#startBattleBtn': 'button'
+    });
+  </script>
+</body>
+</html>

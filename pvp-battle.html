@@ -1,0 +1,23 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沙盘战争 · 联机对局</title>
+  <!-- 联机对局页与单机战役共用同一套战场外壳（src/rendering/battleChrome.js + styles.css）：
+       顶栏 / 左上角时钟 / 画布 / toast / 结算浮层都由它挂载，这里只留脚本入口。 -->
+  <script type="module" crossorigin src="/assets/pvp-battle-BhrWhLnN.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/config-Dg5kmt0j.js">
+  <link rel="modulepreload" crossorigin href="/assets/map-CUEI_L2J.js">
+  <link rel="modulepreload" crossorigin href="/assets/user-storage-Cb3Vs5Be.js">
+  <link rel="modulepreload" crossorigin href="/assets/level-BnrBJt58.js">
+  <link rel="modulepreload" crossorigin href="/assets/i18n-D2YcygJu.js">
+  <link rel="modulepreload" crossorigin href="/assets/battleChrome-BlYPOTNb.js">
+  <link rel="stylesheet" crossorigin href="/assets/battleChrome-BcZBMPGA.css">
+</head>
+<body class="game-fullscreen">
+  <div id="battle-root"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
